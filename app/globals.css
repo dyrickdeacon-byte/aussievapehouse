@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0b0d10;
+  --surface: #14181d;
+  --surface-2: #1b2129;
+  --border: #262d37;
+  --foreground: #e8ecf1;
+  --muted: #94a0ae;
+  --accent: #2dd4bf;
+  --accent-strong: #14b8a6;
+  --amber: #fbbf24;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-sale: var(--amber);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Product description prose (scraped HTML has h2/p/ul structure) */
+.desc h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 1.4rem 0 0.5rem;
+}
+.desc p {
+  margin: 0.5rem 0;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.desc ul,
+.desc ol {
+  margin: 0.5rem 0 0.5rem 1.25rem;
+  list-style: disc;
+  color: var(--muted);
+}
+.desc li {
+  margin: 0.25rem 0;
+  line-height: 1.6;
+}
+.desc strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+.desc table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+.desc td,
+.desc th {
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.6rem;
+  color: var(--muted);
+}
