@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Product } from "@/lib/catalog";
+import { groupLabel, type Product } from "@/lib/catalog";
 import { formatPrice, formatPriceRange } from "@/lib/format";
 import AddToCartButton from "@/components/AddToCartButton";
 
@@ -10,7 +10,8 @@ export default function ProductCard({ product }: { product: Product }) {
   const priceLabel = hasRange
     ? formatPriceRange(product.price_min, product.price_max)
     : formatPrice(product.price ?? product.price_min);
-  const category = product.categories[0]?.name;
+  // Our normalised group, not the supplier's messy (often wrong) category
+  const category = groupLabel(product.group);
   const discount =
     product.on_sale && product.regular_price && product.price && product.regular_price > product.price
       ? Math.round((1 - product.price / product.regular_price) * 100)

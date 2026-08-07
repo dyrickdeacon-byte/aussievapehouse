@@ -72,13 +72,18 @@ body {
 
 /* ── Dot-work motifs (tuned for the light ground) ── */
 
+/* Multicolour painted dots — terracotta / ochre / eucalypt / clay */
 .dot-row {
   height: 6px;
-  width: 120px;
-  background-image: radial-gradient(circle 2.5px at 8px 50%, var(--accent) 2.4px, transparent 2.6px);
-  background-size: 16px 6px;
+  width: 128px;
+  background-image:
+    radial-gradient(circle 2.5px at 8px 50%, var(--accent) 2.4px, transparent 2.6px),
+    radial-gradient(circle 2.5px at 24px 50%, var(--ochre) 2.4px, transparent 2.6px),
+    radial-gradient(circle 2.5px at 40px 50%, var(--eucalypt) 2.4px, transparent 2.6px),
+    radial-gradient(circle 2.5px at 56px 50%, #8a2f1a 2.4px, transparent 2.6px);
+  background-size: 64px 6px;
   background-repeat: repeat-x;
-  opacity: 0.75;
+  opacity: 0.85;
 }
 
 .dot-field {

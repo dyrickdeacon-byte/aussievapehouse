@@ -26,12 +26,19 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <section className="dot-field relative overflow-hidden border-b border-line bg-background">
-      {/* Warm sun-wash in the top corner */}
+      {/* Warm sun-wash top corner + eucalypt wash bottom-left */}
       <div
         className="pointer-events-none absolute -right-32 -top-40 h-[420px] w-[420px] rounded-full opacity-60"
         style={{
           background:
             "radial-gradient(circle, rgba(156,115,26,0.25) 0%, transparent 65%)",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute -bottom-44 -left-36 h-[420px] w-[420px] rounded-full opacity-50"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(47,109,95,0.22) 0%, transparent 65%)",
         }}
       />
 
@@ -69,7 +76,11 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                 {/* Product shot on a sand disc with dotted rings — shown at
                     native-ish size (source images are ~300px, don't upscale) */}
                 <div className="relative flex items-center justify-center">
-                  <div className="absolute h-[190px] w-[190px] rounded-full border border-line-2 bg-surface shadow-inner sm:h-[320px] sm:w-[320px]" />
+                  <div
+                    className={`absolute h-[190px] w-[190px] rounded-full border border-line-2 shadow-inner sm:h-[320px] sm:w-[320px] ${
+                      ["bg-[#fbf3e2]", "bg-[#f4e7cb]", "bg-[#e6eee8]", "bg-[#f5e0d1]"][i % 4]
+                    }`}
+                  />
                   <div className="art-rings absolute h-[220px] w-[220px] sm:h-[380px] sm:w-[380px]" />
                   <Image
                     src={s.image}

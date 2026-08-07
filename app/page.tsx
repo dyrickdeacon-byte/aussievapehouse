@@ -13,27 +13,45 @@ import ProductCard from "@/components/ProductCard";
 import Faq from "@/components/Faq";
 import NewsletterForm from "@/components/NewsletterForm";
 
+// Each trust item carries its own earth tone — part of the multicolour blend
 const TRUST = [
   {
     icon: "🚀",
     title: "Same-Day Dispatch",
     body: "Order before 2pm AEST and it ships today, Australia-wide.",
+    circle: "bg-[#b4451c]/12",
+    text: "text-accent",
   },
   {
     icon: "📦",
     title: "Discreet Packaging",
     body: "Plain box, no branding, nothing on the label. Every order.",
+    circle: "bg-[#9c731a]/15",
+    text: "text-ochre",
   },
   {
     icon: "✅",
     title: "100% Genuine Stock",
     body: "Sourced direct. Verify authenticity codes on every major brand.",
+    circle: "bg-[#2f6d5f]/12",
+    text: "text-eucalypt",
   },
   {
     icon: "🔒",
     title: "Secure Checkout",
     body: "256-bit encrypted payments — card, PayPal, Apple Pay & more.",
+    circle: "bg-[#8a2f1a]/12",
+    text: "text-[#8a2f1a]",
   },
+];
+
+// Rotating earth hues for tiles and pills
+const TILE_OVERLAYS = ["#241a0e", "#5c2008", "#1c4038", "#5a3c08"];
+const PILL_TINTS = [
+  "border-[#b4451c]/35 bg-[#b4451c]/8 text-[#9a3a16] hover:bg-[#b4451c]/15",
+  "border-[#9c731a]/40 bg-[#9c731a]/10 text-[#7d5c14] hover:bg-[#9c731a]/18",
+  "border-[#2f6d5f]/35 bg-[#2f6d5f]/8 text-[#2a5d51] hover:bg-[#2f6d5f]/15",
+  "border-[#8a2f1a]/35 bg-[#8a2f1a]/8 text-[#7a2a17] hover:bg-[#8a2f1a]/15",
 ];
 
 const FLAVOURS = [
@@ -79,8 +97,10 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-[1380px] grid-cols-2 gap-6 px-4 py-9 text-center lg:grid-cols-4">
           {TRUST.map((t) => (
             <div key={t.title}>
-              <div className="text-2xl">{t.icon}</div>
-              <p className="mt-2 text-[13.5px] font-bold text-ochre">{t.title}</p>
+              <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full text-2xl ${t.circle}`}>
+                {t.icon}
+              </div>
+              <p className={`mt-2.5 text-[13.5px] font-bold ${t.text}`}>{t.title}</p>
               <p className="mx-auto mt-1 max-w-[220px] text-[11.5px] leading-relaxed text-muted">
                 {t.body}
               </p>
@@ -93,7 +113,7 @@ export default function HomePage() {
       <section className="mx-auto max-w-[1380px] px-4 py-16">
         <SectionHead eyebrow="Browse by Category" title="What are you looking for?" />
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
-          {tiles.map((t) => (
+          {tiles.map((t, i) => (
             <Link
               key={t.key}
               href={`/shop?group=${t.key}`}
@@ -108,7 +128,12 @@ export default function HomePage() {
                   className="bg-white object-cover transition duration-500 group-hover:scale-105"
                 />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-earth/85 via-earth/10 to-transparent" />
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(to top, ${TILE_OVERLAYS[i % 4]}e0 0%, ${TILE_OVERLAYS[i % 4]}22 45%, transparent 70%)`,
+                }}
+              />
               <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-4">
                 <div>
                   <p className="font-display text-xl text-[#f5eee0]">{t.label}</p>
@@ -124,7 +149,13 @@ export default function HomePage() {
       </section>
 
       {/* Best sellers */}
-      <section className="border-t border-line bg-surface/50">
+      <section
+        className="border-t border-line bg-surface/50"
+        style={{
+          backgroundImage:
+            "radial-gradient(620px 300px at 92% 0%, rgba(156,115,26,.10), transparent), radial-gradient(520px 280px at 4% 100%, rgba(47,109,95,.10), transparent)",
+        }}
+      >
         <div className="mx-auto max-w-[1380px] px-4 py-16">
           <div className="flex items-end justify-between">
             <SectionHead eyebrow="Hand Picked" title="Top shelf this week" />
@@ -179,11 +210,11 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1380px] px-4 py-14">
           <SectionHead eyebrow="Shop by Flavour" title="What's your flavour?" />
           <div className="flex flex-wrap gap-2.5">
-            {FLAVOURS.map((f) => (
+            {FLAVOURS.map((f, i) => (
               <Link
                 key={f}
                 href={`/shop?q=${encodeURIComponent(f.toLowerCase())}`}
-                className="rounded-full border border-line-2 bg-surface-3 px-5 py-2 text-[12.5px] font-medium text-muted transition hover:border-accent hover:bg-accent/10 hover:text-accent"
+                className={`rounded-full border px-5 py-2 text-[12.5px] font-semibold transition ${PILL_TINTS[i % 4]}`}
               >
                 {f}
               </Link>
@@ -201,7 +232,13 @@ export default function HomePage() {
       </section>
 
       {/* Newsletter */}
-      <section className="dot-field border-t border-line bg-surface">
+      <section
+        className="dot-field border-t border-line bg-surface"
+        style={{
+          backgroundImage:
+            "radial-gradient(480px 260px at 88% 20%, rgba(180,69,28,.09), transparent), radial-gradient(460px 240px at 8% 85%, rgba(47,109,95,.09), transparent)",
+        }}
+      >
         <div className="mx-auto max-w-[520px] px-4 py-16 text-center">
           <h2 className="font-display text-3xl sm:text-4xl">
             Get <em className="not-italic text-ochre">10% off</em> your first order

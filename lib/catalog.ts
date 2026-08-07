@@ -335,29 +335,29 @@ const wellShot = (p: Product) =>
 
 const HERO_EYEBROWS = ["Top Shelf", "Premium Pick", "Staff Favourite", "Trending Now"];
 
+// Owner rule: the hero rotates core range only — no hardware/accessories
+const HERO_GROUPS: GroupKey[] = ["disposables", "e-liquids", "pods"];
+
 export function getHeroProducts(): { product: Product; eyebrow: string }[] {
   // Bundles / multi-packs make weak hero shots — single products only.
-  // AU$50+ keeps cheap accessories off the marquee. Rank by photo
-  // resolution, prefer one product per group for variety.
+  // Best of each hero group first (priciest, sharpest photos), then fill
+  // remaining slots with the next-best from any hero group.
   const pool = getProducts()
     .filter(
       (p) =>
         wellShot(p) &&
-        (p.price ?? p.price_min ?? 0) >= 50 &&
+        HERO_GROUPS.includes(p.group) &&
         !/bundle|\(\d+\s*pcs\)|bulk buy/i.test(p.name)
     )
     .sort(
       (a, b) =>
-        (b.images[0]?.width ?? 0) - (a.images[0]?.width ?? 0) ||
-        popularity(b) - popularity(a)
+        (b.price ?? b.price_min ?? 0) - (a.price ?? a.price_min ?? 0) ||
+        (b.images[0]?.width ?? 0) - (a.images[0]?.width ?? 0)
     );
   const slides: { product: Product; eyebrow: string }[] = [];
-  const usedGroups = new Set<string>();
-  for (const p of pool) {
-    if (slides.length >= 4) break;
-    if (usedGroups.has(p.group)) continue;
-    usedGroups.add(p.group);
-    slides.push({ product: p, eyebrow: HERO_EYEBROWS[slides.length] });
+  for (const g of HERO_GROUPS) {
+    const p = pool.find((x) => x.group === g);
+    if (p) slides.push({ product: p, eyebrow: HERO_EYEBROWS[slides.length] });
   }
   for (const p of pool) {
     if (slides.length >= 4) break;
@@ -416,10 +416,29 @@ export function getBrandCounts(): { name: string; count: number }[] {
 }
 
 export function getBestSellers(limit = 8): Product[] {
-  return [...getProducts()]
+  // Owner rule: at most 2 accessory-type products in the featured grid
+  const isAccessory = (p: Product) =>
+    p.group === "accessories" ||
+    p.group === "coils" ||
+    /accessor/i.test(p.categories[0]?.name ?? "");
+  const ranked = [...getProducts()]
     .filter(wellShot)
-    .sort((a, b) => popularity(b) - popularity(a))
-    .slice(0, limit);
+    .sort(
+      (a, b) =>
+        popularity(b) - popularity(a) ||
+        (b.images[0]?.width ?? 0) - (a.images[0]?.width ?? 0)
+    );
+  const picks: Product[] = [];
+  let accessories = 0;
+  for (const p of ranked) {
+    if (picks.length >= limit) break;
+    if (isAccessory(p)) {
+      if (accessories >= 2) continue;
+      accessories++;
+    }
+    picks.push(p);
+  }
+  return picks;
 }
 
 export function getRelated(product: Product, limit = 4): Product[] {
