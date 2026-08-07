@@ -68,8 +68,16 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <span className="text-[15px] font-bold">
-            {hasRange && <span className="mr-0.5 text-[10px] font-normal text-muted">from</span>}
-            {hasRange ? formatPrice(product.price_min) : priceLabel}
+            {(product.price ?? product.price_min ?? 0) <= 0 ? (
+              <span className="text-[12px] font-semibold text-muted">Price TBC</span>
+            ) : (
+              <>
+                {hasRange && (
+                  <span className="mr-0.5 text-[10px] font-normal text-muted">from</span>
+                )}
+                {hasRange ? formatPrice(product.price_min) : priceLabel}
+              </>
+            )}
           </span>
           {product.has_options || hasRange ? (
             <Link

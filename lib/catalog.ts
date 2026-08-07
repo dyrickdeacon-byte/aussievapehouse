@@ -123,7 +123,7 @@ function decodeEntities(s: string): string {
 // literally pointing at chatgpt.com), embedded <img> tags from dead CDNs,
 // keyword-stuffed filler and cross-sell spam. Keep the substance only.
 const SEO_HEADING =
-  /why (choose|buy|shop)|shipping|deliver|about (us|aussie|vape)|faq|frequently asked|warranty|order (from|online)|where to buy|australia.?wide|customer|support|payment|returns|contact|conclusion|final (thoughts|words)|online today|get yours|discreet|browse|explore|bundle|\(\d+\s*pcs\)|mixed flavours|wholesale|bulk buy|review/i;
+  /why (choose|buy|shop)|shipping|deliver|about (us|aussie|vape)|faq|frequently asked|warranty|order (from|online)|where to buy|australia.?wide|customer|support|payment|returns|contact|conclusion|final (thoughts|words)|online today|get yours|discreet|browse|explore|bundle|\(\d+\s*pcs\)|mixed flavours|wholesale|bulk buy/i;
 
 const KEEP_HEADING = /specification|package content|what's in|contents|advantage|feature/i;
 
@@ -158,6 +158,9 @@ function cleanDescription(html: string): string {
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+    .replace(/<video[\s\S]*?<\/video>/gi, "")
+    .replace(/<audio[\s\S]*?<\/audio>/gi, "")
+    .replace(/<source[^>]*>/gi, "")
     // embedded images hotlink dead external CDNs — the "broken image" reports
     .replace(/<img[^>]*>/gi, "")
     .replace(/<figure[^>]*>/gi, "")
@@ -199,7 +202,16 @@ function cleanDescription(html: string): string {
     kept.push(cleaned);
     textLen += plain.length;
   }
-  return kept.join("\n").trim();
+  let result = kept.join("\n").trim();
+  // Over-cleaned to nothing but the source had substance? Keep the first
+  // stretch of the source (headings with the old title format dropped).
+  if (!result) {
+    const fallback = base.replace(/<h[23][^>]*>[^<]*\|[^<]*<\/h[23]>/gi, "");
+    if (fallback.replace(/<[^>]+>/g, " ").trim()) {
+      result = truncateAtBoundary(fallback, 1200).trim();
+    }
+  }
+  return result;
 }
 
 export function isPlaceholderImage(im: { alt?: string } | undefined): boolean {

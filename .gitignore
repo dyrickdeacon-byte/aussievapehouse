@@ -46,3 +46,5 @@ catalog/failures.json
 
 # design reference site (not part of the app)
 meridiankush_cloudflare/
+catalog/audit-result.json
+catalog/crawl-failures.json
