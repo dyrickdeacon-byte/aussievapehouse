@@ -1,10 +1,12 @@
 import Link from "next/link";
+import Medallion from "@/components/Medallion";
 
 export const metadata = { title: "Checkout" };
 
 export default function CheckoutPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+      <Medallion variant={4} size={64} className="mx-auto mb-5 opacity-90" />
       <h1 className="font-display text-3xl">Checkout is on its way 🚧</h1>
       <p className="mx-auto mt-3 max-w-md leading-relaxed text-muted">
         Payments aren&apos;t wired up yet. This is where the payment provider,

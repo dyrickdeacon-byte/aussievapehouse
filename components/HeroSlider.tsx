@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import Medallion from "@/components/Medallion";
+import Medallion, { DotSpiral } from "@/components/Medallion";
 
 export type HeroSlide = {
   slug: string;
@@ -92,14 +92,23 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                       ["bg-[#fbf3e2]", "bg-[#f4e7cb]", "bg-[#e6eee8]", "bg-[#f5e0d1]"][i % 4]
                     }`}
                   />
-                  <div className="art-rings absolute h-[220px] w-[220px] sm:h-[380px] sm:w-[380px]" />
+                  <DotSpiral className="absolute h-[220px] w-[220px] sm:h-[380px] sm:w-[380px]" />
                   <Image
                     src={s.image}
                     alt={s.name}
                     width={280}
                     height={280}
                     priority={i === 0}
-                    className="relative h-[150px] w-[150px] object-contain mix-blend-multiply transition-transform duration-500 hover:scale-105 sm:h-[260px] sm:w-[260px]"
+                    className="relative h-[150px] w-[150px] object-contain transition-transform duration-500 hover:scale-105 sm:h-[260px] sm:w-[260px]"
+                    style={{
+                      // square photos fade out radially so their edges
+                      // dissolve into the spiral instead of ending in a box
+                      // (no blend mode — mask+blend composite flakily)
+                      maskImage:
+                        "radial-gradient(circle at center, black 52%, transparent 74%)",
+                      WebkitMaskImage:
+                        "radial-gradient(circle at center, black 52%, transparent 74%)",
+                    }}
                   />
                   <div className="pointer-events-none absolute bottom-1 left-[8%] sm:bottom-3 sm:left-[14%]" aria-hidden>
                     <Medallion variant={(i + 2) % 6} size={44} />

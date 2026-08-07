@@ -161,6 +161,46 @@ export default function Medallion({
   );
 }
 
+// Dots wound along an Archimedean spiral — the classic Aboriginal spiral
+// motif. The centre stays empty (r0) so a product shot can sit inside it.
+export function DotSpiral({
+  size = 380,
+  turns = 3,
+  r0 = 27,
+  r1 = 46,
+  className = "",
+}: {
+  size?: number;
+  turns?: number;
+  r0?: number;
+  r1?: number;
+  className?: string;
+}) {
+  const palette = [TERRA, OCHRE, RUST, GOLD];
+  const steps = 150;
+  const dots = [];
+  for (let i = 0; i < steps; i++) {
+    const t = i / (steps - 1);
+    const theta = t * turns * Math.PI * 2;
+    const r = r0 + (r1 - r0) * t;
+    dots.push(
+      <circle
+        key={i}
+        cx={rnd(Math.cos(theta) * r)}
+        cy={rnd(Math.sin(theta) * r)}
+        r={rnd(1.5 + 1.1 * t)}
+        fill={palette[i % palette.length]}
+        opacity={0.9}
+      />
+    );
+  }
+  return (
+    <svg width={size} height={size} viewBox="-50 -50 100 100" className={className} aria-hidden>
+      {dots}
+    </svg>
+  );
+}
+
 // A centred trio of medallions used as a section divider
 export function MedallionDivider() {
   return (

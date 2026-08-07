@@ -9,6 +9,7 @@ import { formatPrice, formatPriceRange } from "@/lib/format";
 import ImageGallery from "@/components/ImageGallery";
 import AddToCartButton from "@/components/AddToCartButton";
 import ProductCard from "@/components/ProductCard";
+import Medallion from "@/components/Medallion";
 
 export async function generateMetadata({
   params,
@@ -53,7 +54,10 @@ export default async function ProductPage({
         <ImageGallery images={product.images} name={product.name} />
 
         <div>
-          <h1 className="text-2xl font-bold leading-tight">{product.name}</h1>
+          <h1 className="font-display text-3xl leading-tight sm:text-4xl">
+            {product.name}
+          </h1>
+          <div className="dot-row mt-2.5" aria-hidden />
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <span className="text-2xl font-semibold text-accent">{priceLabel}</span>
@@ -140,7 +144,10 @@ export default async function ProductPage({
 
       {related.length > 0 && (
         <section className="mt-14">
-          <h2 className="text-xl font-semibold">You might also like</h2>
+          <div className="flex items-center gap-3">
+            <Medallion variant={5} size={36} className="shrink-0" />
+            <h2 className="font-display text-2xl">You might also like</h2>
+          </div>
           <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {related.map((p) => (
               <ProductCard key={p.id} product={p} />

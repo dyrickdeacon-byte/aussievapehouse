@@ -10,6 +10,7 @@ import {
 } from "@/lib/catalog";
 import ProductCard from "@/components/ProductCard";
 import ShopControls from "@/components/ShopControls";
+import Medallion from "@/components/Medallion";
 
 export const metadata = { title: "Shop" };
 
@@ -52,10 +53,16 @@ export default async function ShopPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-2xl font-bold">
-          {group ? groupLabel(group) : "Shop all"}
-        </h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <Medallion variant={1} size={44} className="shrink-0" />
+          <div>
+            <h1 className="font-display text-3xl sm:text-4xl">
+              {group ? groupLabel(group) : "Shop all"}
+            </h1>
+            <div className="dot-row mt-2" aria-hidden />
+          </div>
+        </div>
         <p className="text-sm text-muted">{total.toLocaleString()} products</p>
       </div>
 

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/format";
+import Medallion from "@/components/Medallion";
 
 export default function CartPage() {
   const { items, subtotal, setQty, remove, clear } = useCart();
@@ -11,7 +12,8 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold">Your cart is empty</h1>
+        <Medallion variant={2} size={64} className="mx-auto mb-5 opacity-90" />
+        <h1 className="font-display text-3xl">Your cart is empty</h1>
         <p className="mt-2 text-muted">Go find something you like.</p>
         <Link
           href="/shop"
@@ -25,8 +27,11 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-2xl font-bold">Your cart</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Medallion variant={0} size={38} className="shrink-0" />
+          <h1 className="font-display text-3xl">Your cart</h1>
+        </div>
         <button onClick={clear} className="text-xs text-muted hover:text-foreground">
           Clear cart
         </button>

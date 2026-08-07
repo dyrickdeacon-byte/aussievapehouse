@@ -256,6 +256,10 @@ export function searchProducts(opts: SearchOptions): {
   }
 
   const priceOf = (p: Product) => p.price ?? p.price_min ?? 0;
+  // 178 supplier listings ship a blank "import placeholder" image — sink
+  // them below products with real photos in the default sort
+  const hasRealPhoto = (p: Product) =>
+    p.images.length > 0 && !/placeholder/i.test(p.images[0].alt ?? "");
   switch (opts.sort) {
     case "price-asc":
       items = [...items].sort((a, b) => priceOf(a) - priceOf(b));
@@ -267,11 +271,11 @@ export function searchProducts(opts: SearchOptions): {
       items = [...items].sort((a, b) => a.name.localeCompare(b.name));
       break;
     default:
-      // "featured": in-stock first, then review count, then name
+      // "featured": in-stock first, real photos before placeholders, then name
       items = [...items].sort(
         (a, b) =>
           Number(b.in_stock) - Number(a.in_stock) ||
-          b.review_count - a.review_count ||
+          Number(hasRealPhoto(b)) - Number(hasRealPhoto(a)) ||
           a.name.localeCompare(b.name)
       );
   }
