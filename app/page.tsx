@@ -6,6 +6,7 @@ import {
   getCategoryTiles,
   getHeroProducts,
   groupLabel,
+  primaryImage,
 } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
 import HeroSlider from "@/components/HeroSlider";
@@ -99,7 +100,7 @@ export default function HomePage() {
           name: product.name,
           eyebrow,
           price: formatPrice(product.price ?? product.price_min),
-          image: product.images[0]?.src ?? "",
+          image: primaryImage(product)?.src ?? "",
           category: groupLabel(product.group),
         }))}
       />

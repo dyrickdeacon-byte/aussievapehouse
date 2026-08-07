@@ -165,8 +165,8 @@ export default function Medallion({
 // motif. The centre stays empty (r0) so a product shot can sit inside it.
 export function DotSpiral({
   size = 380,
-  turns = 3,
-  r0 = 31,
+  turns = 2.5,
+  r0 = 35,
   r1 = 46,
   className = "",
 }: {
@@ -176,10 +176,11 @@ export function DotSpiral({
   r1?: number;
   className?: string;
 }) {
-  // Brighter, higher-energy palette than the medallions — this frames the
-  // hero product, so it should lift the shot, not mud it
-  const palette = ["#ea6a1f", "#ecb54b", "#cf4a12", "#f2c064"];
-  const steps = 150;
+  // Reef palette — coral / turquoise / sunshine / deep teal. Fits the sand
+  // ground, pops harder than earth tones, and stays clear of the photo:
+  // wide inner hole, fine dots.
+  const palette = ["#f4633a", "#14b0a5", "#f6b83d", "#0e7a74"];
+  const steps = 140;
   const dots = [];
   for (let i = 0; i < steps; i++) {
     const t = i / (steps - 1);
@@ -190,9 +191,9 @@ export function DotSpiral({
         key={i}
         cx={rnd(Math.cos(theta) * r)}
         cy={rnd(Math.sin(theta) * r)}
-        r={rnd(1.2 + 0.9 * t)}
+        r={rnd(0.9 + 0.7 * t)}
         fill={palette[i % palette.length]}
-        opacity={0.9}
+        opacity={0.95}
       />
     );
   }

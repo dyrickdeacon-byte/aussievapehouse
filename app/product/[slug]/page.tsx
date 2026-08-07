@@ -4,6 +4,7 @@ import {
   getProductBySlug,
   getRelated,
   groupLabel,
+  primaryImage,
 } from "@/lib/catalog";
 import { formatPrice, formatPriceRange } from "@/lib/format";
 import ImageGallery from "@/components/ImageGallery";
@@ -118,7 +119,7 @@ export default async function ProductPage({
                   slug: product.slug,
                   name: product.name,
                   price: product.price ?? product.price_min ?? 0,
-                  image: product.images[0]?.src ?? null,
+                  image: primaryImage(product)?.src ?? null,
                 }}
                 showQty
               />

@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { groupLabel, type Product } from "@/lib/catalog";
+import { groupLabel, primaryImage, type Product } from "@/lib/catalog";
 import { formatPrice, formatPriceRange } from "@/lib/format";
 import AddToCartButton from "@/components/AddToCartButton";
 import Medallion from "@/components/Medallion";
 
 export default function ProductCard({ product }: { product: Product }) {
-  const img = product.images[0];
+  const img = primaryImage(product);
   const hasRange = product.price_min != null && product.price_max !== product.price_min;
   const priceLabel = hasRange
     ? formatPriceRange(product.price_min, product.price_max)
@@ -21,7 +21,7 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <div className="group overflow-hidden rounded-xl border border-line bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-[0_14px_32px_rgba(60,45,25,.16)]">
       <Link href={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden bg-white">
-        {img && !/placeholder/i.test(img.alt ?? "") ? (
+        {img ? (
           <Image
             src={img.src}
             alt={img.alt}

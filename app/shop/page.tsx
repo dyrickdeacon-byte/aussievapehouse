@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import {
+  getBrandsForGroup,
   getCategoriesForGroup,
+  getFlavoursForGroup,
   getGroupCounts,
   groupLabel,
   searchProducts,
@@ -40,16 +42,24 @@ export default async function ShopPage({
 }) {
   const params = await searchParams;
   const group = str(params.group) as GroupKey | undefined;
+  const brand = str(params.brand);
+  const flavour = str(params.flavour);
   const opts: SearchOptions = {
     q: str(params.q),
     group,
     category: str(params.category),
+    brand,
+    flavour,
     sort: (str(params.sort) as SearchOptions["sort"]) ?? "featured",
     page: Number(str(params.page) ?? 1) || 1,
   };
   const { items, total, page, pages } = searchProducts(opts);
   const groups = getGroupCounts();
   const categories = getCategoriesForGroup(group ?? null).slice(0, 20);
+  // Refine pills appear once the shopper has narrowed to a category —
+  // paging through 20 pages is not a filter strategy
+  const refineBrands = group ? getBrandsForGroup(group) : [];
+  const refineFlavours = group ? getFlavoursForGroup(group) : [];
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -69,7 +79,7 @@ export default async function ShopPage({
       {/* Group pills */}
       <div className="mt-4 flex flex-wrap gap-2">
         <Link
-          href={buildQuery(params, { group: null, category: null, page: null })}
+          href={buildQuery(params, { group: null, category: null, brand: null, flavour: null, page: null })}
           className={`rounded-full border px-3 py-1.5 text-xs transition ${
             !group
               ? "border-accent bg-accent/10 text-accent"
@@ -81,7 +91,7 @@ export default async function ShopPage({
         {groups.map((g) => (
           <Link
             key={g.key}
-            href={buildQuery(params, { group: g.key, category: null, page: null })}
+            href={buildQuery(params, { group: g.key, category: null, brand: null, flavour: null, page: null })}
             className={`rounded-full border px-3 py-1.5 text-xs transition ${
               group === g.key
                 ? "border-accent bg-accent/10 text-accent"
@@ -92,6 +102,54 @@ export default async function ShopPage({
           </Link>
         ))}
       </div>
+
+      {/* Refine rows — brand & flavour, shown once a category is chosen */}
+      {refineBrands.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted">
+            Brand
+          </span>
+          {refineBrands.map((b) => (
+            <Link
+              key={b.name}
+              href={buildQuery(params, {
+                brand: brand === b.name ? null : b.name,
+                page: null,
+              })}
+              className={`rounded-full border px-3 py-1 text-[11.5px] font-medium transition ${
+                brand === b.name
+                  ? "border-accent bg-accent text-white"
+                  : "border-line-2 bg-surface text-muted hover:border-accent hover:text-accent"
+              }`}
+            >
+              {b.name} <span className="opacity-60">({b.count})</span>
+            </Link>
+          ))}
+        </div>
+      )}
+      {refineFlavours.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted">
+            Flavour
+          </span>
+          {refineFlavours.map((f) => (
+            <Link
+              key={f.name}
+              href={buildQuery(params, {
+                flavour: flavour === f.name ? null : f.name,
+                page: null,
+              })}
+              className={`rounded-full border px-3 py-1 text-[11.5px] font-medium transition ${
+                flavour === f.name
+                  ? "border-eucalypt bg-eucalypt text-white"
+                  : "border-line-2 bg-surface text-muted hover:border-eucalypt hover:text-eucalypt"
+              }`}
+            >
+              {f.name} <span className="opacity-60">({f.count})</span>
+            </Link>
+          ))}
+        </div>
+      )}
 
       <div className="mt-5">
         <Suspense>

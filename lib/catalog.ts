@@ -120,43 +120,96 @@ function decodeEntities(s: string): string {
 }
 
 // The scraped descriptions are bloated AI SEO copy: broken links (some
-// literally pointing at chatgpt.com), keyword-stuffed filler sections and
-// link-bait sentences. Keep the product substance, drop the padding.
+// literally pointing at chatgpt.com), embedded <img> tags from dead CDNs,
+// keyword-stuffed filler and cross-sell spam. Keep the substance only.
 const SEO_HEADING =
-  /why (choose|buy|shop)|shipping|deliver|about (us|aussie|vape)|faq|warranty|order (from|online)|where to buy|australia.?wide|customer|support|payment|returns|contact|conclusion|final (thoughts|words)|online today|get yours|discreet|browse|explore/i;
+  /why (choose|buy|shop)|shipping|deliver|about (us|aussie|vape)|faq|frequently asked|warranty|order (from|online)|where to buy|australia.?wide|customer|support|payment|returns|contact|conclusion|final (thoughts|words)|online today|get yours|discreet|browse|explore|bundle|\(\d+\s*pcs\)|mixed flavours|wholesale|bulk buy|review/i;
+
+const KEEP_HEADING = /specification|package content|what's in|contents|advantage|feature/i;
+
+// Truncate at an element boundary (paragraph, list item, table row…)
+// so cut content still renders as valid-enough HTML
+function truncateAtBoundary(html: string, maxText: number): string {
+  const chunks = html.split(/(?=<(?:p|li|tr|h[23]|ul|ol|table|br|div)\b)/i);
+  let out = "";
+  let len = 0;
+  for (const chunk of chunks) {
+    const chunkText = chunk.replace(/<[^>]+>/g, " ").length;
+    if (len > 0 && len + chunkText > maxText) break;
+    out += chunk;
+    len += chunkText;
+    if (len > maxText) break;
+  }
+  // Monolithic blob with no inner boundaries — cut at a sentence instead
+  if (len > maxText * 1.5) {
+    const plain = out.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, maxText);
+    const lastStop = Math.max(
+      plain.lastIndexOf(". "),
+      plain.lastIndexOf("! "),
+      plain.lastIndexOf("? ")
+    );
+    return `<p>${plain.slice(0, lastStop > 200 ? lastStop + 1 : maxText)}</p>`;
+  }
+  return out;
+}
 
 function cleanDescription(html: string): string {
   const base = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+    // embedded images hotlink dead external CDNs — the "broken image" reports
+    .replace(/<img[^>]*>/gi, "")
+    .replace(/<figure[^>]*>/gi, "")
+    .replace(/<\/figure>/gi, "")
     .replace(/<a\b[^>]*>/gi, "")
     .replace(/<\/a>/gi, "")
     .replace(/Aussie Vape Mart( Australia)?/gi, "Aussie Vape House")
     .replace(/<p>(&nbsp;|\s)*<\/p>/gi, "");
 
-  // Split into intro + <h2> sections, keep only the useful ones
-  const parts = base.split(/(?=<h2)/i);
+  // Split into intro + heading-delimited sections, keep only the useful ones
+  const parts = base.split(/(?=<h[23])/i);
   const kept: string[] = [];
   let textLen = 0;
   for (const part of parts) {
-    const headingMatch = part.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i);
+    const headingMatch = part.match(/<h[23][^>]*>([\s\S]*?)<\/h[23]>/i);
     const heading = headingMatch
       ? headingMatch[1].replace(/<[^>]+>/g, "").trim()
       : "";
+    const isKeeper = KEEP_HEADING.test(heading);
     // Drop SEO filler sections and "<name> | <store>" title headers
-    if (heading && (SEO_HEADING.test(heading) || heading.includes("|"))) continue;
+    if (heading && !isKeeper && (SEO_HEADING.test(heading) || heading.includes("|")))
+      continue;
     // Strip link-bait sentences ("browse our…", "check out the…")
-    const cleaned = part.replace(
+    let cleaned = part.replace(
       /[^.!?<>]*\b(browse|check out|visit|explore|discover|see)\s+(our|the|more|all)\b[^.!?<>]*[.!?]/gi,
       ""
     );
-    const plain = cleaned.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    let plain = cleaned.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
     if (!plain) continue;
-    // Cap the bloat — after ~1400 chars only keep spec-style content
-    const hasStructure = /<(table|ul|ol)\b/i.test(cleaned);
-    if (textLen > 1400 && !hasStructure) continue;
+    // Budget: ~2400 chars total; spec-style sections may still append
+    // after that, but nothing escapes truncation and the 3600 hard stop
+    if (textLen > 2400 && !isKeeper) continue;
+    if (textLen > 3600) break;
+    const sectionCap = isKeeper ? 1600 : 1400;
+    if (plain.length > sectionCap) {
+      cleaned = truncateAtBoundary(cleaned, sectionCap);
+      plain = cleaned.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    }
     kept.push(cleaned);
     textLen += plain.length;
   }
   return kept.join("\n").trim();
+}
+
+export function isPlaceholderImage(im: { alt?: string } | undefined): boolean {
+  return !im || /placeholder/i.test(im.alt ?? "");
+}
+
+// First real (non-placeholder) image — 32 listings hide a real photo
+// behind a placeholder in slot 0
+export function primaryImage(p: Product): CatalogImage | undefined {
+  return p.images.find((im) => !isPlaceholderImage(im));
 }
 
 // The source site double-lists ~880 products (same name, separate IDs, one
@@ -256,10 +309,58 @@ export type SearchOptions = {
   q?: string;
   group?: string;
   category?: string;
+  brand?: string;
+  flavour?: string;
   sort?: "featured" | "price-asc" | "price-desc" | "name";
   page?: number;
   perPage?: number;
 };
+
+// Known brands across the catalog — used for the shop's refine pills
+const BRAND_LIST = [
+  "Geek Bar", "Geekvape", "IGET", "Alibarbar", "HQD", "VooPoo", "Uwell",
+  "Vaporesso", "DynaVap", "Nasty Juice", "Airmez", "SMOK", "Lost Vape",
+  "Muha Meds", "Kado", "Waka", "Tyson", "Puffmi", "Elf Bar", "Lost Mary",
+  "INGOT", "Pulse", "Cloud Nurdz", "Simrell", "Sticky Brick", "Storz & Bickel",
+];
+
+const FLAVOUR_LIST = [
+  "Watermelon", "Mango", "Grape", "Mint", "Berry", "Blueberry", "Raspberry",
+  "Strawberry", "Peach", "Banana", "Apple", "Pineapple", "Passion Fruit",
+  "Guava", "Kiwi", "Cola", "Lemon", "Cherry", "Coconut", "Melon", "Orange",
+  "Candy", "Tobacco", "Ice", "Menthol",
+];
+
+function matchesTerm(p: Product, term: string): boolean {
+  const re = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s*"), "i");
+  return (
+    re.test(p.name) ||
+    p.categories.some((c) => re.test(c.name)) ||
+    p.brands.some((b) => re.test(b))
+  );
+}
+
+export function getBrandsForGroup(group?: string | null): { name: string; count: number }[] {
+  const pool = getProducts().filter((p) => !group || p.group === group);
+  return BRAND_LIST.map((name) => ({
+    name,
+    count: pool.filter((p) => matchesTerm(p, name)).length,
+  }))
+    .filter((b) => b.count >= 3)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 14);
+}
+
+export function getFlavoursForGroup(group?: string | null): { name: string; count: number }[] {
+  const pool = getProducts().filter((p) => !group || p.group === group);
+  return FLAVOUR_LIST.map((name) => ({
+    name,
+    count: pool.filter((p) => new RegExp(name, "i").test(p.name)).length,
+  }))
+    .filter((f) => f.count >= 3)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 16);
+}
 
 export function searchProducts(opts: SearchOptions): {
   items: Product[];
@@ -273,6 +374,11 @@ export function searchProducts(opts: SearchOptions): {
   if (opts.group) items = items.filter((p) => p.group === opts.group);
   if (opts.category)
     items = items.filter((p) => p.categories.some((c) => c.slug === opts.category));
+  if (opts.brand) items = items.filter((p) => matchesTerm(p, opts.brand!));
+  if (opts.flavour) {
+    const re = new RegExp(opts.flavour.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    items = items.filter((p) => re.test(p.name));
+  }
   if (opts.q) {
     const terms = opts.q.toLowerCase().split(/\s+/).filter(Boolean);
     items = items.filter((p) => {
@@ -359,11 +465,13 @@ function popularity(p: Product): number {
   );
 }
 
-// Homepage features only well-photographed listings: 3+ product images
-// (owner rule) AND a high-resolution primary shot, measured from the
-// actual files — no upscaled 300px thumbnails on the front page.
-const wellShot = (p: Product) =>
-  sellable(p) && p.images.length >= 3 && (p.images[0]?.width ?? 0) >= 700;
+// Homepage features only well-photographed listings: 3+ real product
+// images (owner rule, placeholders don't count) AND a high-resolution
+// primary shot measured from the actual files — no upscaled thumbnails.
+const wellShot = (p: Product) => {
+  const real = p.images.filter((im) => !isPlaceholderImage(im));
+  return sellable(p) && real.length >= 3 && (real[0]?.width ?? 0) >= 700;
+};
 
 const HERO_EYEBROWS = ["Top Shelf", "Premium Pick", "Staff Favourite", "Trending Now"];
 
@@ -415,9 +523,9 @@ export function getCategoryTiles(): {
           .filter((p) => p.group === g.key && wellShot(p))
           .sort((a, b) => popularity(b) - popularity(a))[0] ??
         products
-          .filter((p) => p.group === g.key && sellable(p))
+          .filter((p) => p.group === g.key && sellable(p) && primaryImage(p))
           .sort((a, b) => popularity(b) - popularity(a))[0];
-      return { ...g, image: rep?.images[0]?.src ?? null };
+      return { ...g, image: rep ? primaryImage(rep)?.src ?? null : null };
     });
 }
 
