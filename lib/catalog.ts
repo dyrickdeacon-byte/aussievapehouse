@@ -127,6 +127,22 @@ const SEO_HEADING =
 
 const KEEP_HEADING = /specification|package content|what's in|contents|advantage|feature/i;
 
+// Other retailers' names + generic promo phrasing that leaked in from the
+// supplier scraping THEIR catalog off competitor stores
+const STORE_NAMES =
+  "ozvapeshops?|oz ?vape ?shops?|vapelink|vape ?king|vaper ?choice|vape ?superstore|vapestore|iget vapes? australia";
+const STORE_PROMO_SENTENCE = new RegExp(
+  `[^.!?<>]*\\b(?:${STORE_NAMES}|visit us|is the place to be|look no further)\\b[^.!?<>]*[.!?]`,
+  "gi"
+);
+// Fallback: any block element still naming another store after
+// sentence-stripping (inline tags break sentence boundaries, and the
+// blocks carry class attributes) gets dropped whole
+const STORE_PROMO_PARAGRAPH = new RegExp(
+  `<(p|li|h2|h3)[^>]*>(?:(?!</\\1>)[\\s\\S])*?\\b(?:${STORE_NAMES})\\b(?:(?!</\\1>)[\\s\\S])*?</\\1>`,
+  "gi"
+);
+
 // Truncate at an element boundary (paragraph, list item, table row…)
 // so cut content still renders as valid-enough HTML
 function truncateAtBoundary(html: string, maxText: number): string {
@@ -192,6 +208,10 @@ function cleanDescription(html: string): string {
     .replace(/<span[^>]*class="[^"]*(?:gspb_|elementor)[^"]*"[^>]*>[\s\S]*?<\/span>/gi, "")
     .replace(/[^.!?<>]*click here[^.!?<>]*[.!?]/gi, "")
     .replace(/Aussie Vape Mart( Australia)?/gi, "Aussie Vape House")
+    // run the promo strips here too so the over-cleaned fallback path
+    // can't resurrect competitor-store copy
+    .replace(STORE_PROMO_SENTENCE, "")
+    .replace(STORE_PROMO_PARAGRAPH, "")
     .replace(/<p>(&nbsp;|\s)*<\/p>/gi, "");
 
   // Split into intro + heading-delimited sections, keep only the useful ones
@@ -212,6 +232,11 @@ function cleanDescription(html: string): string {
       /[^.!?<>]*\b(browse|check out|visit|explore|discover|see)\s+(our|the|more|all)\b[^.!?<>]*[.!?]/gi,
       ""
     );
+    // Third-party store self-promo left in by the supplier's own scraping
+    // ("At Ozvapeshops, we provide…", "…Vapelink is the place to be.")
+    cleaned = cleaned
+      .replace(STORE_PROMO_SENTENCE, "")
+      .replace(STORE_PROMO_PARAGRAPH, "");
     let plain = cleaned.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
     if (!plain) continue;
     // Budget: ~2400 chars total; spec-style sections may still append

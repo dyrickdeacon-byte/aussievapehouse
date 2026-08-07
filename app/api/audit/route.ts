@@ -9,6 +9,7 @@ export async function GET() {
   }
   const products = getProducts();
   const issues: Record<string, string[]> = {
+    storeLeak: [],
     cssInDescription: [],
     imgInDescription: [],
     externalUrlInDescription: [],
@@ -23,6 +24,8 @@ export async function GET() {
 
   for (const p of products) {
     const d = p.description_html;
+    if (/ozvapeshops?|oz ?vape ?shops?|vapelink|vape ?king|vaper ?choice|vapestore|visit us/i.test(d))
+      issues.storeLeak.push(p.slug);
     if (/gspb_|elementor-\d|@media|\{[^{}]{0,200}:[^{}]{0,400}[;}]/.test(d))
       issues.cssInDescription.push(p.slug);
     if (/<img/i.test(d)) issues.imgInDescription.push(p.slug);
