@@ -69,11 +69,11 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                   <h2 className="font-display mt-2 text-[26px] leading-[0.98] text-foreground sm:text-4xl lg:text-5xl">
                     {s.name}
                   </h2>
-                  <p className="mt-3 inline-flex items-center rounded-full border border-ochre/35 bg-ochre/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-ochre sm:text-[11px]">
+                  <p className="mt-3 inline-flex items-center rounded-full bg-earth px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#f0e2c4] sm:text-[11px]">
                     {s.category}
                   </p>
                   <p className="mt-4 text-xl font-bold text-foreground sm:text-2xl">
-                    <span className="mr-1.5 text-xs font-normal text-muted">from</span>
+                    <span className="mr-1.5 text-sm font-semibold text-foreground/70">from</span>
                     {s.price}
                   </p>
                   <Link
@@ -99,15 +99,16 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                     width={280}
                     height={280}
                     priority={i === 0}
+                    loading="eager"
                     className="relative h-[150px] w-[150px] object-contain transition-transform duration-500 hover:scale-105 sm:h-[260px] sm:w-[260px]"
                     style={{
                       // square photos fade out radially so their edges
                       // dissolve into the spiral instead of ending in a box
                       // (no blend mode — mask+blend composite flakily)
                       maskImage:
-                        "radial-gradient(circle at center, black 52%, transparent 74%)",
+                        "radial-gradient(circle at center, black 58%, transparent 80%)",
                       WebkitMaskImage:
-                        "radial-gradient(circle at center, black 52%, transparent 74%)",
+                        "radial-gradient(circle at center, black 58%, transparent 80%)",
                     }}
                   />
                   <div className="pointer-events-none absolute bottom-1 left-[8%] sm:bottom-3 sm:left-[14%]" aria-hidden>

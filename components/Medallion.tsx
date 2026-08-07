@@ -166,7 +166,7 @@ export default function Medallion({
 export function DotSpiral({
   size = 380,
   turns = 3,
-  r0 = 27,
+  r0 = 31,
   r1 = 46,
   className = "",
 }: {
@@ -176,7 +176,9 @@ export function DotSpiral({
   r1?: number;
   className?: string;
 }) {
-  const palette = [TERRA, OCHRE, RUST, GOLD];
+  // Brighter, higher-energy palette than the medallions — this frames the
+  // hero product, so it should lift the shot, not mud it
+  const palette = ["#ea6a1f", "#ecb54b", "#cf4a12", "#f2c064"];
   const steps = 150;
   const dots = [];
   for (let i = 0; i < steps; i++) {
@@ -188,7 +190,7 @@ export function DotSpiral({
         key={i}
         cx={rnd(Math.cos(theta) * r)}
         cy={rnd(Math.sin(theta) * r)}
-        r={rnd(1.5 + 1.1 * t)}
+        r={rnd(1.2 + 0.9 * t)}
         fill={palette[i % palette.length]}
         opacity={0.9}
       />

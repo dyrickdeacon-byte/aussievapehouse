@@ -39,13 +39,14 @@ export default function Footer() {
 
   return (
     <footer className="mt-20 bg-earth text-[#d8c9a8]">
-      {/* Dot band transition into the footer */}
+      {/* Dot band transition into the footer — sand ground with earth dots
+          so it bridges page → footer instead of adding a third colour */}
       <div
-        className="h-[10px] w-full"
+        className="h-[12px] w-full bg-background"
         style={{
           backgroundImage:
-            "radial-gradient(circle 3px at 10px 50%, rgba(156,115,26,.55) 2.8px, transparent 3px)",
-          backgroundSize: "22px 10px",
+            "radial-gradient(circle 3px at 11px 50%, rgba(36,26,14,.45) 2.8px, transparent 3px)",
+          backgroundSize: "22px 12px",
         }}
         aria-hidden
       />

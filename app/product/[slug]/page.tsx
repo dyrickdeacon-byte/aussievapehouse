@@ -51,7 +51,10 @@ export default async function ProductPage({
       </nav>
 
       <div className="mt-5 grid gap-8 md:grid-cols-2">
-        <ImageGallery images={product.images} name={product.name} />
+        <ImageGallery
+          images={product.images.filter((im) => !/placeholder/i.test(im.alt ?? ""))}
+          name={product.name}
+        />
 
         <div>
           <h1 className="font-display text-3xl leading-tight sm:text-4xl">

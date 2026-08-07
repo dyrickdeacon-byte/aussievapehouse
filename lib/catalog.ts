@@ -119,16 +119,44 @@ function decodeEntities(s: string): string {
     .replace(/&([a-z]+);/gi, (m, name: string) => NAMED_ENTITIES[name.toLowerCase()] ?? m);
 }
 
-// The scraped descriptions are SEO copy with broken internal links (some
-// literally pointing at chatgpt.com) and the source store's branding.
-// Strip anchors, drop the "<name> | Aussie Vape Mart" heading, rebrand.
+// The scraped descriptions are bloated AI SEO copy: broken links (some
+// literally pointing at chatgpt.com), keyword-stuffed filler sections and
+// link-bait sentences. Keep the product substance, drop the padding.
+const SEO_HEADING =
+  /why (choose|buy|shop)|shipping|deliver|about (us|aussie|vape)|faq|warranty|order (from|online)|where to buy|australia.?wide|customer|support|payment|returns|contact|conclusion|final (thoughts|words)|online today|get yours|discreet|browse|explore/i;
+
 function cleanDescription(html: string): string {
-  return html
+  const base = html
     .replace(/<a\b[^>]*>/gi, "")
     .replace(/<\/a>/gi, "")
-    .replace(/<h2>[^<]*\|[^<]*<\/h2>/i, "")
     .replace(/Aussie Vape Mart( Australia)?/gi, "Aussie Vape House")
-    .trim();
+    .replace(/<p>(&nbsp;|\s)*<\/p>/gi, "");
+
+  // Split into intro + <h2> sections, keep only the useful ones
+  const parts = base.split(/(?=<h2)/i);
+  const kept: string[] = [];
+  let textLen = 0;
+  for (const part of parts) {
+    const headingMatch = part.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i);
+    const heading = headingMatch
+      ? headingMatch[1].replace(/<[^>]+>/g, "").trim()
+      : "";
+    // Drop SEO filler sections and "<name> | <store>" title headers
+    if (heading && (SEO_HEADING.test(heading) || heading.includes("|"))) continue;
+    // Strip link-bait sentences ("browse our…", "check out the…")
+    const cleaned = part.replace(
+      /[^.!?<>]*\b(browse|check out|visit|explore|discover|see)\s+(our|the|more|all)\b[^.!?<>]*[.!?]/gi,
+      ""
+    );
+    const plain = cleaned.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (!plain) continue;
+    // Cap the bloat — after ~1400 chars only keep spec-style content
+    const hasStructure = /<(table|ul|ol)\b/i.test(cleaned);
+    if (textLen > 1400 && !hasStructure) continue;
+    kept.push(cleaned);
+    textLen += plain.length;
+  }
+  return kept.join("\n").trim();
 }
 
 // The source site double-lists ~880 products (same name, separate IDs, one

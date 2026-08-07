@@ -3,6 +3,7 @@ import Link from "next/link";
 import { groupLabel, type Product } from "@/lib/catalog";
 import { formatPrice, formatPriceRange } from "@/lib/format";
 import AddToCartButton from "@/components/AddToCartButton";
+import Medallion from "@/components/Medallion";
 
 export default function ProductCard({ product }: { product: Product }) {
   const img = product.images[0];
@@ -20,7 +21,7 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <div className="group overflow-hidden rounded-xl border border-line bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-[0_14px_32px_rgba(60,45,25,.16)]">
       <Link href={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden bg-white">
-        {img ? (
+        {img && !/placeholder/i.test(img.alt ?? "") ? (
           <Image
             src={img.src}
             alt={img.alt}
@@ -29,8 +30,13 @@ export default function ProductCard({ product }: { product: Product }) {
             className="object-contain p-3 transition duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-gray-400">
-            No image
+          // 178 supplier listings ship a blank "import placeholder" image —
+          // show intentional artwork instead of a broken-looking white tile
+          <div className="flex h-full flex-col items-center justify-center gap-2.5 bg-surface-2">
+            <Medallion variant={2} size={56} className="opacity-70" />
+            <span className="text-[11px] font-medium text-muted">
+              Photo coming soon
+            </span>
           </div>
         )}
         {product.on_sale && (
