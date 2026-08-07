@@ -63,11 +63,6 @@ export default function ProductCard({ product }: { product: Product }) {
           <span className="text-[15px] font-bold">
             {hasRange && <span className="mr-0.5 text-[10px] font-normal text-muted">from</span>}
             {hasRange ? formatPrice(product.price_min) : priceLabel}
-            {discount && product.regular_price && (
-              <span className="ml-1.5 text-[11px] font-normal text-muted line-through">
-                {formatPrice(product.regular_price)}
-              </span>
-            )}
           </span>
           {product.has_options || hasRange ? (
             <Link

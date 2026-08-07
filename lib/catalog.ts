@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-export type CatalogImage = { src: string; alt: string; local: string };
+// src is rewritten at load time to the local /img/ route (the supplier's
+// server rate-limits hotlinking); remote keeps the original URL as fallback.
+export type CatalogImage = { src: string; alt: string; local: string; remote: string };
 
 export type Product = {
   id: number;
@@ -138,7 +140,9 @@ function dedupe(products: Product[]): Product[] {
   return [...best.values()];
 }
 
-type RawProduct = Omit<Product, "group">;
+type RawProduct = Omit<Product, "group" | "images"> & {
+  images: { src: string; alt: string; local: string }[];
+};
 
 let cache: Product[] | null = null;
 
@@ -151,6 +155,11 @@ export function getProducts(): Product[] {
         ...p,
         name: decodeEntities(p.name),
         categories: p.categories.map((c) => ({ ...c, name: decodeEntities(c.name) })),
+        images: p.images.map((im) => ({
+          ...im,
+          remote: im.src,
+          src: `/img/${im.local.replace(/^images\//, "")}`,
+        })),
         description_html: cleanDescription(p.description_html),
         description_text: p.description_text.replace(
           /Aussie Vape Mart( Australia)?/gi,

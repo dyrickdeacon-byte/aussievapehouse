@@ -223,6 +223,26 @@ export function AfterpayIcon() {
   );
 }
 
+export function BankTransferIcon() {
+  return (
+    <Chip bg="#1c3f5e">
+      <g fill="#fff" transform="translate(7 6)">
+        <path d="M6 0 0 3.4h12z" />
+        <rect x="0.6" y="4.4" width="1.8" height="6" />
+        <rect x="5.1" y="4.4" width="1.8" height="6" />
+        <rect x="9.6" y="4.4" width="1.8" height="6" />
+        <rect x="0" y="11.2" width="12" height="1.9" />
+      </g>
+      <text
+        x="24" y="19.5" fontFamily="Arial, sans-serif" fontSize="10.5"
+        fontWeight="800" fill="#fff"
+      >
+        EFT
+      </text>
+    </Chip>
+  );
+}
+
 export const PAYMENT_ICONS = [
   { name: "Visa", Icon: VisaIcon },
   { name: "Mastercard", Icon: MastercardIcon },
@@ -232,4 +252,5 @@ export const PAYMENT_ICONS = [
   { name: "Google Pay", Icon: GooglePayIcon },
   { name: "PayID", Icon: PayIDIcon },
   { name: "Afterpay", Icon: AfterpayIcon },
+  { name: "Bank Transfer", Icon: BankTransferIcon },
 ];

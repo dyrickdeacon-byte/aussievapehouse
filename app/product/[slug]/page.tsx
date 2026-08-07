@@ -57,13 +57,6 @@ export default async function ProductPage({
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <span className="text-2xl font-semibold text-accent">{priceLabel}</span>
-            {product.on_sale &&
-              product.regular_price != null &&
-              product.regular_price !== product.price && (
-                <span className="text-sm text-muted line-through">
-                  {formatPrice(product.regular_price)}
-                </span>
-              )}
             <span
               className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                 product.in_stock

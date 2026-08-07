@@ -43,12 +43,13 @@ const FLAVOURS = [
 function SectionHead({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div className="mb-8">
-      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-accent">
+      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-ochre">
         {eyebrow}
       </p>
       <h2 className="font-display mt-1 text-3xl text-foreground sm:text-4xl">
         {title}
       </h2>
+      <div className="dot-row mt-3" aria-hidden />
     </div>
   );
 }
@@ -78,7 +79,7 @@ export default function HomePage() {
           {TRUST.map((t) => (
             <div key={t.title}>
               <div className="text-2xl">{t.icon}</div>
-              <p className="mt-2 text-[13.5px] font-bold text-accent">{t.title}</p>
+              <p className="mt-2 text-[13.5px] font-bold text-ochre">{t.title}</p>
               <p className="mx-auto mt-1 max-w-[220px] text-[11.5px] leading-relaxed text-muted">
                 {t.body}
               </p>
@@ -199,10 +200,10 @@ export default function HomePage() {
       </section>
 
       {/* Newsletter */}
-      <section className="border-t border-line bg-surface">
+      <section className="dot-field border-t border-line bg-surface">
         <div className="mx-auto max-w-[520px] px-4 py-16 text-center">
           <h2 className="font-display text-3xl sm:text-4xl">
-            Get <em className="not-italic text-accent">10% off</em> your first order
+            Get <em className="not-italic text-ochre">10% off</em> your first order
           </h2>
           <p className="mb-6 mt-2 text-[13px] text-muted">
             Deals, drops and restocks — straight to your inbox. No spam, unsubscribe anytime.
