@@ -153,8 +153,27 @@ function truncateAtBoundary(html: string, maxText: number): string {
   return out;
 }
 
+// Page-builder CSS (Elementor/GreenShift) dumped as literal TEXT inside
+// the description — "#gspb_row-id-x{...}", "@media(...){...}" etc., with
+// `--` often entity-mangled to en dashes. Peel rules from the inside out.
+function stripCssBlobs(html: string): string {
+  let out = html;
+  for (let i = 0; i < 5; i++) {
+    const before = out;
+    out = out
+      // a CSS rule: selector-ish run + {props containing a colon}
+      .replace(/[#.@\w&][^{}<>]{0,400}\{[^{}]*:[^{}]*\}/g, "")
+      // @media / keyframes shells left hollow after inner rules removed
+      .replace(/@[\w-]+[^{}<>]{0,300}\{[\s;]*\}/g, "")
+      // stray closers
+      .replace(/\{[\s;]*\}/g, "");
+    if (out === before) break;
+  }
+  return out;
+}
+
 function cleanDescription(html: string): string {
-  const base = html
+  const base = stripCssBlobs(html)
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
@@ -167,6 +186,11 @@ function cleanDescription(html: string): string {
     .replace(/<\/figure>/gi, "")
     .replace(/<a\b[^>]*>/gi, "")
     .replace(/<\/a>/gi, "")
+    // page-builder scaffolding divs (elementor/gspb wrappers, spacers) —
+    // our .desc styles only render p/h/ul/table content anyway
+    .replace(/<\/?div[^>]*>/gi, "")
+    .replace(/<span[^>]*class="[^"]*(?:gspb_|elementor)[^"]*"[^>]*>[\s\S]*?<\/span>/gi, "")
+    .replace(/[^.!?<>]*click here[^.!?<>]*[.!?]/gi, "")
     .replace(/Aussie Vape Mart( Australia)?/gi, "Aussie Vape House")
     .replace(/<p>(&nbsp;|\s)*<\/p>/gi, "");
 
@@ -226,6 +250,14 @@ export function primaryImage(p: Product): CatalogImage | undefined {
 
 // The source site double-lists ~880 products (same name, separate IDs, one
 // copy sometimes broken with $0 price). Keep the best copy per name.
+// Broken supplier imports: listings literally named "Product" (or blank).
+// Nothing real to sell there — drop them from the catalog.
+function dropJunk(products: Product[]): Product[] {
+  return products.filter(
+    (p) => p.name.trim().length >= 4 && p.name.trim().toLowerCase() !== "product"
+  );
+}
+
 function dedupe(products: Product[]): Product[] {
   const score = (p: Product) =>
     (p.images.length > 0 ? 4 : 0) +
@@ -262,7 +294,8 @@ export function getProducts(): Product[] {
     const meta = loadImageMeta();
     const file = path.join(process.cwd(), "catalog", "products.json");
     const raw = JSON.parse(readFileSync(file, "utf8")) as RawProduct[];
-    cache = dedupe(
+    cache = dropJunk(
+      dedupe(
       raw.map((p) => ({
         ...p,
         name: decodeEntities(p.name),
@@ -279,6 +312,7 @@ export function getProducts(): Product[] {
         ),
         group: classify(p),
       }))
+      )
     );
   }
   return cache;
