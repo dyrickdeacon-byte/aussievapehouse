@@ -12,6 +12,7 @@ import HeroSlider from "@/components/HeroSlider";
 import ProductCard from "@/components/ProductCard";
 import Faq from "@/components/Faq";
 import NewsletterForm from "@/components/NewsletterForm";
+import Medallion, { MedallionDivider } from "@/components/Medallion";
 
 // Each trust item carries its own earth tone — part of the multicolour blend
 const TRUST = [
@@ -59,16 +60,27 @@ const FLAVOURS = [
   "Strawberry", "Banana", "Cola", "Pineapple", "Tobacco", "Ice",
 ];
 
-function SectionHead({ eyebrow, title }: { eyebrow: string; title: string }) {
+function SectionHead({
+  eyebrow,
+  title,
+  medallion = 0,
+}: {
+  eyebrow: string;
+  title: string;
+  medallion?: number;
+}) {
   return (
-    <div className="mb-8">
-      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-ochre">
-        {eyebrow}
-      </p>
-      <h2 className="font-display mt-1 text-3xl text-foreground sm:text-4xl">
-        {title}
-      </h2>
-      <div className="dot-row mt-3" aria-hidden />
+    <div className="mb-8 flex items-center gap-4">
+      <Medallion variant={medallion} size={46} className="shrink-0" />
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-ochre">
+          {eyebrow}
+        </p>
+        <h2 className="font-display mt-1 text-3xl text-foreground sm:text-4xl">
+          {title}
+        </h2>
+        <div className="dot-row mt-3" aria-hidden />
+      </div>
     </div>
   );
 }
@@ -110,8 +122,11 @@ export default function HomePage() {
       </section>
 
       {/* Category tiles */}
-      <section className="mx-auto max-w-[1380px] px-4 py-16">
-        <SectionHead eyebrow="Browse by Category" title="What are you looking for?" />
+      <section className="relative mx-auto max-w-[1380px] overflow-hidden px-4 py-16">
+        <div className="pointer-events-none absolute -right-24 top-4 opacity-[0.06]" aria-hidden>
+          <Medallion variant={2} size={360} />
+        </div>
+        <SectionHead eyebrow="Browse by Category" title="What are you looking for?" medallion={1} />
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
           {tiles.map((t, i) => (
             <Link
@@ -146,6 +161,9 @@ export default function HomePage() {
             </Link>
           ))}
         </div>
+        <div className="mt-12">
+          <MedallionDivider />
+        </div>
       </section>
 
       {/* Best sellers */}
@@ -158,7 +176,7 @@ export default function HomePage() {
       >
         <div className="mx-auto max-w-[1380px] px-4 py-16">
           <div className="flex items-end justify-between">
-            <SectionHead eyebrow="Hand Picked" title="Top shelf this week" />
+            <SectionHead eyebrow="Hand Picked" title="Top shelf this week" medallion={0} />
             <Link
               href="/shop"
               className="mb-8 hidden text-sm font-semibold text-accent hover:underline sm:block"
@@ -186,7 +204,7 @@ export default function HomePage() {
       {brands.length > 0 && (
         <section className="border-t border-line">
           <div className="mx-auto max-w-[1380px] px-4 py-14">
-            <SectionHead eyebrow="Stocked & Verified" title="The brands you came for" />
+            <SectionHead eyebrow="Stocked & Verified" title="The brands you came for" medallion={3} />
             <div className="flex flex-wrap gap-2.5">
               {brands.map((b) => (
                 <Link
@@ -208,7 +226,7 @@ export default function HomePage() {
       {/* Flavour pills */}
       <section className="border-t border-line bg-surface/50">
         <div className="mx-auto max-w-[1380px] px-4 py-14">
-          <SectionHead eyebrow="Shop by Flavour" title="What's your flavour?" />
+          <SectionHead eyebrow="Shop by Flavour" title="What's your flavour?" medallion={5} />
           <div className="flex flex-wrap gap-2.5">
             {FLAVOURS.map((f, i) => (
               <Link
@@ -226,19 +244,25 @@ export default function HomePage() {
       {/* FAQ */}
       <section className="border-t border-line">
         <div className="mx-auto max-w-[820px] px-4 py-16">
-          <SectionHead eyebrow="Common Questions" title="Frequently asked" />
+          <SectionHead eyebrow="Common Questions" title="Frequently asked" medallion={4} />
           <Faq />
         </div>
       </section>
 
       {/* Newsletter */}
       <section
-        className="dot-field border-t border-line bg-surface"
+        className="dot-field relative overflow-hidden border-t border-line bg-surface"
         style={{
           backgroundImage:
             "radial-gradient(480px 260px at 88% 20%, rgba(180,69,28,.09), transparent), radial-gradient(460px 240px at 8% 85%, rgba(47,109,95,.09), transparent)",
         }}
       >
+        <div className="pointer-events-none absolute left-10 top-1/2 hidden -translate-y-1/2 lg:block" aria-hidden>
+          <Medallion variant={2} size={90} className="opacity-70" />
+        </div>
+        <div className="pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 lg:block" aria-hidden>
+          <Medallion variant={1} size={90} className="opacity-70" />
+        </div>
         <div className="mx-auto max-w-[520px] px-4 py-16 text-center">
           <h2 className="font-display text-3xl sm:text-4xl">
             Get <em className="not-italic text-ochre">10% off</em> your first order

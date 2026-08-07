@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSettings } from "@/lib/settings";
+import Medallion from "@/components/Medallion";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -51,6 +52,11 @@ export default function Footer() {
       <div className="mx-auto grid max-w-[1380px] gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr]">
         <div>
           <p className="font-display text-2xl text-[#e9b44c]">AUSSIE VAPE HOUSE</p>
+          <div className="mt-3 flex items-center gap-4" aria-hidden>
+            <Medallion variant={1} size={34} onDark />
+            <Medallion variant={5} size={34} onDark />
+            <Medallion variant={2} size={34} onDark />
+          </div>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#a4936f]">
             Australia&apos;s home of vapes — disposables, e-liquids, kits and
             more. Same-day dispatch, discreet packaging, genuine stock.

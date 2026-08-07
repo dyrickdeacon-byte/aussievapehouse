@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import Medallion from "@/components/Medallion";
 
 export type HeroSlide = {
   slug: string;
@@ -41,6 +42,16 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
             "radial-gradient(circle, rgba(47,109,95,0.22) 0%, transparent 65%)",
         }}
       />
+      {/* Dot-art medallions — the Oceania energy */}
+      <div className="pointer-events-none absolute -left-16 top-1/2 -translate-y-1/2 opacity-[0.07]" aria-hidden>
+        <Medallion variant={4} size={320} />
+      </div>
+      <div className="pointer-events-none absolute right-6 top-5 hidden sm:block" aria-hidden>
+        <Medallion variant={1} size={54} className="opacity-90" />
+      </div>
+      <div className="pointer-events-none absolute bottom-6 left-6 hidden sm:block" aria-hidden>
+        <Medallion variant={3} size={40} className="opacity-80" />
+      </div>
 
       <div className="relative overflow-hidden">
         <div
@@ -88,8 +99,11 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                     width={280}
                     height={280}
                     priority={i === 0}
-                    className="glow-img relative h-[150px] w-[150px] object-contain transition-transform duration-500 hover:scale-105 sm:h-[260px] sm:w-[260px]"
+                    className="relative h-[150px] w-[150px] object-contain mix-blend-multiply transition-transform duration-500 hover:scale-105 sm:h-[260px] sm:w-[260px]"
                   />
+                  <div className="pointer-events-none absolute bottom-1 left-[8%] sm:bottom-3 sm:left-[14%]" aria-hidden>
+                    <Medallion variant={(i + 2) % 6} size={44} />
+                  </div>
                 </div>
               </div>
             </div>
