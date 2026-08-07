@@ -117,8 +117,25 @@ function cleanDescription(html: string): string {
     .replace(/<a\b[^>]*>/gi, "")
     .replace(/<\/a>/gi, "")
     .replace(/<h2>[^<]*\|[^<]*<\/h2>/i, "")
-    .replace(/Aussie Vape Mart( Australia)?/gi, "VapeAussie")
+    .replace(/Aussie Vape Mart( Australia)?/gi, "Aussie Vape House")
     .trim();
+}
+
+// The source site double-lists ~880 products (same name, separate IDs, one
+// copy sometimes broken with $0 price). Keep the best copy per name.
+function dedupe(products: Product[]): Product[] {
+  const score = (p: Product) =>
+    (p.images.length > 0 ? 4 : 0) +
+    ((p.price ?? p.price_min ?? 0) > 0 ? 2 : 0) +
+    (p.in_stock ? 1 : 0) +
+    Math.min(p.description_html.length / 100000, 0.9);
+  const best = new Map<string, Product>();
+  for (const p of products) {
+    const key = p.name.trim().toLowerCase();
+    const cur = best.get(key);
+    if (!cur || score(p) > score(cur)) best.set(key, p);
+  }
+  return [...best.values()];
 }
 
 type RawProduct = Omit<Product, "group">;
@@ -129,17 +146,19 @@ export function getProducts(): Product[] {
   if (!cache) {
     const file = path.join(process.cwd(), "catalog", "products.json");
     const raw = JSON.parse(readFileSync(file, "utf8")) as RawProduct[];
-    cache = raw.map((p) => ({
-      ...p,
-      name: decodeEntities(p.name),
-      categories: p.categories.map((c) => ({ ...c, name: decodeEntities(c.name) })),
-      description_html: cleanDescription(p.description_html),
-      description_text: p.description_text.replace(
-        /Aussie Vape Mart( Australia)?/gi,
-        "VapeAussie"
-      ),
-      group: classify(p),
-    }));
+    cache = dedupe(
+      raw.map((p) => ({
+        ...p,
+        name: decodeEntities(p.name),
+        categories: p.categories.map((c) => ({ ...c, name: decodeEntities(c.name) })),
+        description_html: cleanDescription(p.description_html),
+        description_text: p.description_text.replace(
+          /Aussie Vape Mart( Australia)?/gi,
+          "Aussie Vape House"
+        ),
+        group: classify(p),
+      }))
+    );
   }
   return cache;
 }
@@ -260,6 +279,106 @@ export function getFeatured(limit = 8): Product[] {
     if (!picks.includes(p)) picks.push(p);
   }
   return picks;
+}
+
+const sellable = (p: Product) =>
+  p.in_stock && p.images.length > 0 && (p.price ?? p.price_min ?? 0) > 0;
+
+// The catalog has zero review data, so rank "popularity" by brand heat +
+// deal status instead. Deterministic per product id for stable pages.
+const HOT_BRANDS =
+  /geek bar pulse|iget (bar|moon|legend|goat)|alibarbar|hqd|waka|lost mary|kado/i;
+
+function popularity(p: Product): number {
+  return (
+    (HOT_BRANDS.test(p.name) ? 100 : 0) +
+    (p.on_sale ? 10 : 0) +
+    (p.group === "disposables" ? 5 : 0) +
+    // stable pseudo-random tiebreaker so it's not alphabetical
+    ((p.id * 2654435761) % 97) / 97
+  );
+}
+
+// Hand-picked hero heroes with graceful fallbacks to any popular product
+const HERO_PICKS: { match: RegExp; eyebrow: string }[] = [
+  { match: /geek bar pulse x/i, eyebrow: "Best Seller" },
+  { match: /iget bar\b/i, eyebrow: "Australia's Favourite" },
+  { match: /alibarbar (ingot|upload)/i, eyebrow: "Big Puffs, Big Value" },
+  { match: /iget moon/i, eyebrow: "New Arrival" },
+];
+
+export function getHeroProducts(): { product: Product; eyebrow: string }[] {
+  // Bundles / multi-packs make weak hero shots — single products only
+  const pool = getProducts().filter(
+    (p) => sellable(p) && !/bundle|\(\d+\s*pcs\)|bulk buy/i.test(p.name)
+  );
+  const slides: { product: Product; eyebrow: string }[] = [];
+  const used = new Set<number>();
+  for (const pick of HERO_PICKS) {
+    const p = pool.find((x) => !used.has(x.id) && pick.match.test(x.name));
+    if (p) {
+      used.add(p.id);
+      slides.push({ product: p, eyebrow: pick.eyebrow });
+    }
+  }
+  for (const p of [...pool].sort((a, b) => popularity(b) - popularity(a))) {
+    if (slides.length >= 3) break;
+    if (!used.has(p.id)) {
+      used.add(p.id);
+      slides.push({ product: p, eyebrow: "Trending Now" });
+    }
+  }
+  return slides.slice(0, 4);
+}
+
+export function getCategoryTiles(): {
+  key: GroupKey;
+  label: string;
+  count: number;
+  image: string | null;
+}[] {
+  const products = getProducts();
+  return getGroupCounts()
+    .filter((g) => g.key !== "other")
+    .map((g) => {
+      const rep = products
+        .filter((p) => p.group === g.key && sellable(p))
+        .sort((a, b) => popularity(b) - popularity(a))[0];
+      return { ...g, image: rep?.images[0]?.src ?? null };
+    });
+}
+
+const BRAND_DEFS = [
+  "Geek Bar",
+  "IGET",
+  "Alibarbar",
+  "HQD",
+  "VooPoo",
+  "Uwell",
+  "Vaporesso",
+  "DynaVap",
+  "Nasty Juice",
+  "Airmez",
+];
+
+export function getBrandCounts(): { name: string; count: number }[] {
+  const products = getProducts();
+  return BRAND_DEFS.map((name) => {
+    const re = new RegExp(name.replace(/\s+/g, "\\s*"), "i");
+    return {
+      name,
+      count: products.filter(
+        (p) => re.test(p.name) || p.categories.some((c) => re.test(c.name))
+      ).length,
+    };
+  }).filter((b) => b.count >= 10);
+}
+
+export function getBestSellers(limit = 8): Product[] {
+  return [...getProducts()]
+    .filter(sellable)
+    .sort((a, b) => popularity(b) - popularity(a))
+    .slice(0, limit);
 }
 
 export function getRelated(product: Product, limit = 4): Product[] {

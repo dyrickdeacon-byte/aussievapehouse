@@ -15,7 +15,7 @@ export default function CartPage() {
         <p className="mt-2 text-muted">Go find something you like.</p>
         <Link
           href="/shop"
-          className="mt-6 inline-block rounded-lg bg-accent-strong px-6 py-3 text-sm font-semibold text-black transition hover:bg-accent"
+          className="mt-6 inline-block rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-2"
         >
           Browse the shop
         </Link>
@@ -87,7 +87,7 @@ export default function CartPage() {
         <p className="text-xs text-muted">Shipping and taxes calculated at checkout.</p>
         <Link
           href="/checkout"
-          className="rounded-lg bg-accent-strong px-8 py-3 text-sm font-semibold text-black transition hover:bg-accent"
+          className="rounded-lg bg-accent px-8 py-3 text-sm font-semibold text-white transition hover:bg-accent-2"
         >
           Proceed to checkout
         </Link>

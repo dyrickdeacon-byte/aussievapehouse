@@ -1,36 +1,79 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b0d10;
-  --surface: #14181d;
-  --surface-2: #1b2129;
-  --border: #262d37;
-  --foreground: #e8ecf1;
-  --muted: #94a0ae;
-  --accent: #2dd4bf;
-  --accent-strong: #14b8a6;
-  --amber: #fbbf24;
+  --background: #080808;
+  --surface: #111111;
+  --surface-2: #191919;
+  --surface-3: #202020;
+  --border: #222222;
+  --border-2: #2e2e2e;
+  --foreground: #f0f0f0;
+  --muted: #8f8f8f;
+  --accent: #f97316;
+  --accent-2: #ea6d0e;
+  --glow: rgba(249, 115, 22, 0.15);
+  --dim: rgba(249, 115, 22, 0.08);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-line: var(--border);
+  --color-line-2: var(--border-2);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
-  --color-accent-strong: var(--accent-strong);
-  --color-sale: var(--amber);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-accent-2: var(--accent-2);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-bebas);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 15px;
 }
+
+.font-display {
+  font-family: var(--font-bebas), sans-serif;
+  letter-spacing: 0.04em;
+}
+
+/* Announcement ticker */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.ticker-row {
+  display: inline-flex;
+  gap: 56px;
+  animation: ticker 40s linear infinite;
+  white-space: nowrap;
+}
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.announce {
+  background: linear-gradient(90deg, #7c2d06, #c2560b, #f97316, #c2560b, #7c2d06);
+  background-size: 300% 100%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+/* Accent glow helpers */
+.glow-accent { box-shadow: 0 0 24px var(--glow); }
+.glow-img { filter: drop-shadow(0 0 48px var(--glow)) drop-shadow(0 20px 40px rgba(0, 0, 0, 0.7)); }
+
+/* WhatsApp float pulse */
+@keyframes wa-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.45); }
+  70% { box-shadow: 0 0 0 14px rgba(37, 211, 102, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+.wa-float { animation: wa-pulse 2.2s infinite; }
 
 /* Product description prose (scraped HTML has h2/p/ul structure) */
 .desc h2 {

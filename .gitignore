@@ -43,3 +43,6 @@ next-env.d.ts
 # scraped catalog assets (838MB - keep out of the repo)
 catalog/images/
 catalog/failures.json
+
+# design reference site (not part of the app)
+meridiankush_cloudflare/

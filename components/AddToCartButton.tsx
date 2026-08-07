@@ -24,7 +24,7 @@ export default function AddToCartButton({ product, compact, showQty }: Props) {
     return (
       <button
         onClick={handleAdd}
-        className="rounded-lg bg-accent-strong px-2.5 py-1.5 text-xs font-semibold text-black transition hover:bg-accent"
+        className="rounded-lg bg-accent px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-accent-2"
       >
         {added ? "Added ✓" : "Add"}
       </button>
@@ -54,7 +54,7 @@ export default function AddToCartButton({ product, compact, showQty }: Props) {
       )}
       <button
         onClick={handleAdd}
-        className="flex-1 rounded-lg bg-accent-strong px-6 py-3 text-sm font-semibold text-black transition hover:bg-accent"
+        className="flex-1 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-2"
       >
         {added ? "Added to cart ✓" : "Add to cart"}
       </button>

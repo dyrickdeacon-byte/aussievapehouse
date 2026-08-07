@@ -131,15 +131,6 @@ export default async function ProductPage({
             )}
           </div>
 
-          <p className="mt-4 rounded-lg bg-accent-strong/10 px-4 py-3 text-xs leading-relaxed text-accent">
-            🇦🇺 Ordering from Australia? Nicotine vaping products are supplied
-            via pharmacies.{" "}
-            <Link href="/pharmacy" className="font-semibold underline underline-offset-2">
-              Find a pharmacy or consult near you
-            </Link>
-            .
-          </p>
-
           {product.description_html && (
             <details className="mt-6 rounded-xl border border-line bg-surface px-5 py-4" open>
               <summary className="cursor-pointer text-sm font-semibold">

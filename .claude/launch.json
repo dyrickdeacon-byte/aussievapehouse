@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "meridian-ref",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "serve", "meridiankush_cloudflare", "-l", "8080"],
+      "port": 8080
     }
   ]
 }

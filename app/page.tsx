@@ -1,103 +1,214 @@
+import Image from "next/image";
 import Link from "next/link";
-import { getFeatured, getGroupCounts } from "@/lib/catalog";
+import {
+  getBestSellers,
+  getBrandCounts,
+  getCategoryTiles,
+  getHeroProducts,
+} from "@/lib/catalog";
+import { formatPrice } from "@/lib/format";
+import HeroSlider from "@/components/HeroSlider";
 import ProductCard from "@/components/ProductCard";
+import Faq from "@/components/Faq";
+import NewsletterForm from "@/components/NewsletterForm";
 
-const GROUP_EMOJI: Record<string, string> = {
-  disposables: "⚡",
-  "e-liquids": "🧪",
-  pods: "🔋",
-  coils: "🌀",
-  kits: "🛠️",
-  pouches: "⚪",
-  glass: "🫙",
-  accessories: "🎒",
-  other: "📦",
-};
+const TRUST = [
+  {
+    icon: "🚀",
+    title: "Same-Day Dispatch",
+    body: "Order before 2pm AEST and it ships today, Australia-wide.",
+  },
+  {
+    icon: "📦",
+    title: "Discreet Packaging",
+    body: "Plain box, no branding, nothing on the label. Every order.",
+  },
+  {
+    icon: "✅",
+    title: "100% Genuine Stock",
+    body: "Sourced direct. Verify authenticity codes on every major brand.",
+  },
+  {
+    icon: "🔒",
+    title: "Secure Checkout",
+    body: "256-bit encrypted payments — card, PayPal, Apple Pay & more.",
+  },
+];
+
+const FLAVOURS = [
+  "Watermelon", "Mango", "Grape", "Mint", "Berry", "Peach",
+  "Strawberry", "Banana", "Cola", "Pineapple", "Tobacco", "Ice",
+];
+
+function SectionHead({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <div className="mb-8">
+      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-accent">
+        {eyebrow}
+      </p>
+      <h2 className="font-display mt-1 text-3xl text-foreground sm:text-4xl">
+        {title}
+      </h2>
+    </div>
+  );
+}
 
 export default function HomePage() {
-  const groups = getGroupCounts();
-  const featured = getFeatured(8);
+  const heroes = getHeroProducts();
+  const tiles = getCategoryTiles();
+  const bestSellers = getBestSellers(8);
+  const brands = getBrandCounts();
 
   return (
-    <div className="mx-auto max-w-7xl px-4">
-      {/* Hero */}
-      <section className="relative mt-6 overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-surface-2 via-surface to-background px-6 py-16 text-center sm:py-24">
-        <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-accent/10 blur-3xl" />
-        <h1 className="mx-auto max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
-          Everything vape, <span className="text-accent">done right</span>.
-        </h1>
-        <p className="mx-auto mt-4 max-w-xl text-muted">
-          {`${groups.reduce((n, g) => n + g.count, 0).toLocaleString()} products across disposables, e-liquids, kits and more — with a compliant pharmacy pathway where you need one.`}
-        </p>
-        <div className="mt-8 flex justify-center gap-3">
-          <Link
-            href="/shop"
-            className="rounded-lg bg-accent-strong px-6 py-3 text-sm font-semibold text-black transition hover:bg-accent"
-          >
-            Shop all products
-          </Link>
-          <Link
-            href="/pharmacy"
-            className="rounded-lg border border-line px-6 py-3 text-sm font-semibold text-muted transition hover:text-foreground"
-          >
-            Pharmacy finder
-          </Link>
+    <div>
+      <HeroSlider
+        slides={heroes.map(({ product, eyebrow }) => ({
+          slug: product.slug,
+          name: product.name,
+          eyebrow,
+          price: formatPrice(product.price ?? product.price_min),
+          image: product.images[0]?.src ?? "",
+          category: product.categories[0]?.name ?? "Vape",
+        }))}
+      />
+
+      {/* Trust strip */}
+      <section className="border-y border-line bg-surface">
+        <div className="mx-auto grid max-w-[1380px] grid-cols-2 gap-6 px-4 py-9 text-center lg:grid-cols-4">
+          {TRUST.map((t) => (
+            <div key={t.title}>
+              <div className="text-2xl">{t.icon}</div>
+              <p className="mt-2 text-[13.5px] font-bold text-accent">{t.title}</p>
+              <p className="mx-auto mt-1 max-w-[220px] text-[11.5px] leading-relaxed text-muted">
+                {t.body}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="mt-12">
-        <h2 className="text-xl font-semibold">Browse by category</h2>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {groups.map((g) => (
+      {/* Category tiles */}
+      <section className="mx-auto max-w-[1380px] px-4 py-16">
+        <SectionHead eyebrow="Browse by Category" title="What are you looking for?" />
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
+          {tiles.map((t) => (
             <Link
-              key={g.key}
-              href={`/shop?group=${g.key}`}
-              className="group rounded-xl border border-line bg-surface p-4 transition hover:border-accent/50 hover:bg-surface-2"
+              key={t.key}
+              href={`/shop?group=${t.key}`}
+              className="group relative block aspect-[3/2] overflow-hidden rounded-xl border border-line transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:shadow-[0_8px_32px_var(--glow)]"
             >
-              <span className="text-2xl">{GROUP_EMOJI[g.key] ?? "📦"}</span>
-              <p className="mt-2 font-medium transition group-hover:text-accent">
-                {g.label}
-              </p>
-              <p className="text-xs text-muted">{g.count.toLocaleString()} products</p>
+              {t.image && (
+                <Image
+                  src={t.image}
+                  alt={t.label}
+                  fill
+                  sizes="(max-width: 640px) 50vw, 25vw"
+                  className="object-cover brightness-[0.5] saturate-[0.65] transition duration-500 group-hover:scale-105 group-hover:brightness-[0.65]"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-4">
+                <div>
+                  <p className="font-display text-xl text-white">{t.label}</p>
+                  <p className="text-[10px] text-white/50">
+                    {t.count.toLocaleString()} products
+                  </p>
+                </div>
+                <span className="text-accent opacity-0 transition group-hover:opacity-100">→</span>
+              </div>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* Featured */}
-      <section className="mt-12">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-xl font-semibold">Popular right now</h2>
-          <Link href="/shop" className="text-sm text-accent hover:underline">
-            View all →
-          </Link>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {featured.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
+      {/* Best sellers */}
+      <section className="border-t border-line bg-surface/50">
+        <div className="mx-auto max-w-[1380px] px-4 py-16">
+          <div className="flex items-end justify-between">
+            <SectionHead eyebrow="Hand Picked" title="Top shelf this week" />
+            <Link
+              href="/shop"
+              className="mb-8 hidden text-sm font-semibold text-accent hover:underline sm:block"
+            >
+              View all →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 xl:grid-cols-4">
+            {bestSellers.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+          <div className="mt-9 text-center">
+            <Link
+              href="/shop"
+              className="inline-flex items-center gap-2 rounded-lg border border-accent px-8 py-3 text-[13px] font-bold uppercase tracking-wider text-accent transition hover:bg-accent hover:text-white hover:shadow-[0_0_24px_var(--glow)]"
+            >
+              Shop the full range
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* Compliance strip */}
-      <section className="mt-12 rounded-2xl border border-line bg-surface p-6 sm:p-8">
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Buying from Australia? 🇦🇺</h2>
-            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
-              Australian law supplies nicotine vaping products through
-              pharmacies only. Use our finder to locate a participating
-              pharmacy near you, or book a consultation to talk through your
-              options with a professional.
-            </p>
+      {/* Brands */}
+      {brands.length > 0 && (
+        <section className="border-t border-line">
+          <div className="mx-auto max-w-[1380px] px-4 py-14">
+            <SectionHead eyebrow="Stocked & Verified" title="The brands you came for" />
+            <div className="flex flex-wrap gap-2.5">
+              {brands.map((b) => (
+                <Link
+                  key={b.name}
+                  href={`/shop?q=${encodeURIComponent(b.name)}`}
+                  className="group flex items-center gap-2.5 rounded-full border border-line-2 bg-surface-2 px-5 py-2.5 transition hover:border-accent hover:bg-accent/10"
+                >
+                  <span className="font-display text-lg text-foreground transition group-hover:text-accent">
+                    {b.name.toUpperCase()}
+                  </span>
+                  <span className="text-[10.5px] text-muted">{b.count}</span>
+                </Link>
+              ))}
+            </div>
           </div>
-          <Link
-            href="/pharmacy"
-            className="shrink-0 rounded-lg bg-accent-strong px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-accent"
-          >
-            Pharmacies &amp; consults near me
-          </Link>
+        </section>
+      )}
+
+      {/* Flavour pills */}
+      <section className="border-t border-line bg-surface/50">
+        <div className="mx-auto max-w-[1380px] px-4 py-14">
+          <SectionHead eyebrow="Shop by Flavour" title="What's your flavour?" />
+          <div className="flex flex-wrap gap-2.5">
+            {FLAVOURS.map((f) => (
+              <Link
+                key={f}
+                href={`/shop?q=${encodeURIComponent(f.toLowerCase())}`}
+                className="rounded-full border border-line-2 bg-surface-3 px-5 py-2 text-[12.5px] font-medium text-muted transition hover:border-accent hover:bg-accent/10 hover:text-accent"
+              >
+                {f}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="border-t border-line">
+        <div className="mx-auto max-w-[820px] px-4 py-16">
+          <SectionHead eyebrow="Common Questions" title="Frequently asked" />
+          <Faq />
+        </div>
+      </section>
+
+      {/* Newsletter */}
+      <section className="border-t border-line bg-surface">
+        <div className="mx-auto max-w-[520px] px-4 py-16 text-center">
+          <h2 className="font-display text-3xl sm:text-4xl">
+            Get <em className="not-italic text-accent">10% off</em> your first order
+          </h2>
+          <p className="mb-6 mt-2 text-[13px] text-muted">
+            Deals, drops and restocks — straight to your inbox. No spam, unsubscribe anytime.
+          </p>
+          <NewsletterForm />
+          <p className="mt-3 text-[11px] text-muted/60">18+ only. We never share your email.</p>
         </div>
       </section>
     </div>
