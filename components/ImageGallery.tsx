@@ -15,7 +15,8 @@ export default function ImageGallery({
   const current = images[active];
 
   return (
-    <div>
+    // Capped width — source images are ~300px, don't blow them up
+    <div className="w-full max-w-[420px]">
       <div className="relative aspect-square overflow-hidden rounded-xl border border-line bg-white">
         {current ? (
           <Image

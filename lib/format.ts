@@ -1,11 +1,12 @@
-const aud = new Intl.NumberFormat("en-AU", {
-  style: "currency",
-  currency: "AUD",
+// Prices display with an explicit AU$ prefix (owner request)
+const num = new Intl.NumberFormat("en-AU", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 });
 
 export function formatPrice(value: number | null | undefined): string {
   if (value == null) return "";
-  return aud.format(value);
+  return `AU$${num.format(value)}`;
 }
 
 export function formatPriceRange(
@@ -13,6 +14,6 @@ export function formatPriceRange(
   max: number | null | undefined
 ): string {
   if (min == null) return "";
-  if (max == null || max === min) return aud.format(min);
-  return `${aud.format(min)} – ${aud.format(max)}`;
+  if (max == null || max === min) return formatPrice(min);
+  return `${formatPrice(min)} – ${formatPrice(max)}`;
 }

@@ -25,63 +25,65 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   if (slides.length === 0) return null;
 
   return (
-    <section className="relative h-[440px] overflow-hidden bg-background sm:h-[470px]">
+    <section className="dot-field relative overflow-hidden border-b border-line bg-background">
+      {/* Warm sun-wash in the top corner */}
       <div
-        className="absolute inset-0 flex transition-transform duration-700 ease-[cubic-bezier(.4,0,.2,1)]"
-        style={{ transform: `translateX(-${active * 100}%)` }}
-      >
-        {slides.map((s, i) => (
-          <div key={s.slug} className="relative h-full w-full shrink-0">
-            {/* Blurred backdrop from the product shot */}
-            <div
-              className="absolute inset-0 scale-110 bg-cover bg-center"
-              style={{
-                backgroundImage: `url("${encodeURI(s.image)}")`,
-                filter: "brightness(0.22) blur(14px) saturate(0.6) sepia(0.25)",
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-background/20" />
-            <div className="dot-field absolute inset-0 opacity-70" />
+        className="pointer-events-none absolute -right-32 -top-40 h-[420px] w-[420px] rounded-full opacity-60"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(156,115,26,0.25) 0%, transparent 65%)",
+        }}
+      />
 
-            <div className="relative mx-auto grid h-full max-w-[1380px] grid-cols-[1.15fr_0.85fr] items-center gap-4 px-5 sm:gap-8 sm:px-12 md:grid-cols-[1fr_1fr]">
-              <div className="max-w-md">
-                <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-ochre">
-                  <span aria-hidden>●&nbsp;●&nbsp;●</span>
-                  {s.eyebrow}
-                </p>
-                <h2 className="font-display mt-2 text-[26px] leading-[0.98] text-white sm:text-4xl lg:text-5xl">
-                  {s.name}
-                </h2>
-                <p className="mt-3 inline-flex items-center rounded-full border border-ochre/30 bg-ochre/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-ochre sm:text-[11px]">
-                  {s.category}
-                </p>
-                <p className="mt-4 text-xl font-bold text-foreground sm:text-2xl">
-                  <span className="mr-1.5 text-xs font-normal text-muted">from</span>
-                  {s.price}
-                </p>
-                <Link
-                  href={`/product/${s.slug}`}
-                  className="glow-accent mt-5 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-[12px] font-extrabold uppercase tracking-wider text-white transition hover:bg-accent-2 sm:mt-6 sm:px-7 sm:py-3 sm:text-[13px]"
-                >
-                  Shop now →
-                </Link>
-              </div>
+      <div className="relative overflow-hidden">
+        <div
+          className="flex transition-transform duration-700 ease-[cubic-bezier(.4,0,.2,1)]"
+          style={{ transform: `translateX(-${active * 100}%)` }}
+        >
+          {slides.map((s, i) => (
+            <div key={s.slug} className="w-full shrink-0">
+              <div className="mx-auto grid min-h-[400px] max-w-[1380px] grid-cols-[1.1fr_0.9fr] items-center gap-4 px-5 py-10 sm:min-h-[440px] sm:gap-8 sm:px-12 md:grid-cols-2">
+                <div className="max-w-md">
+                  <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-accent">
+                    <span aria-hidden>●&nbsp;●&nbsp;●</span>
+                    {s.eyebrow}
+                  </p>
+                  <h2 className="font-display mt-2 text-[26px] leading-[0.98] text-foreground sm:text-4xl lg:text-5xl">
+                    {s.name}
+                  </h2>
+                  <p className="mt-3 inline-flex items-center rounded-full border border-ochre/35 bg-ochre/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-ochre sm:text-[11px]">
+                    {s.category}
+                  </p>
+                  <p className="mt-4 text-xl font-bold text-foreground sm:text-2xl">
+                    <span className="mr-1.5 text-xs font-normal text-muted">from</span>
+                    {s.price}
+                  </p>
+                  <Link
+                    href={`/product/${s.slug}`}
+                    className="glow-accent mt-5 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-[12px] font-extrabold uppercase tracking-wider text-white transition hover:bg-accent-2 sm:mt-6 sm:px-7 sm:py-3 sm:text-[13px]"
+                  >
+                    Shop now →
+                  </Link>
+                </div>
 
-              {/* Product shot — visible on every screen size */}
-              <div className="relative flex items-center justify-center md:justify-end md:pr-6">
-                <div className="art-rings absolute h-[260px] w-[260px] sm:h-[340px] sm:w-[340px] lg:h-[400px] lg:w-[400px]" />
-                <Image
-                  src={s.image}
-                  alt={s.name}
-                  width={340}
-                  height={340}
-                  priority={i === 0}
-                  className="glow-img relative h-[190px] w-[190px] object-contain transition-transform duration-500 hover:scale-105 sm:h-[280px] sm:w-[280px] lg:h-[340px] lg:w-[340px]"
-                />
+                {/* Product shot on a sand disc with dotted rings — shown at
+                    native-ish size (source images are ~300px, don't upscale) */}
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute h-[190px] w-[190px] rounded-full border border-line-2 bg-surface shadow-inner sm:h-[320px] sm:w-[320px]" />
+                  <div className="art-rings absolute h-[220px] w-[220px] sm:h-[380px] sm:w-[380px]" />
+                  <Image
+                    src={s.image}
+                    alt={s.name}
+                    width={280}
+                    height={280}
+                    priority={i === 0}
+                    className="glow-img relative h-[150px] w-[150px] object-contain transition-transform duration-500 hover:scale-105 sm:h-[260px] sm:w-[260px]"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {slides.length > 1 && (
@@ -92,9 +94,7 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
               onClick={() => setActive(i)}
               aria-label={`Slide ${i + 1}`}
               className={`h-[7px] rounded-full transition-all ${
-                i === active
-                  ? "w-[22px] bg-ochre shadow-[0_0_8px_var(--ochre)]"
-                  : "w-[7px] bg-white/20"
+                i === active ? "w-[22px] bg-accent" : "w-[7px] bg-foreground/15"
               }`}
             />
           ))}

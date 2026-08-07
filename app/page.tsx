@@ -5,6 +5,7 @@ import {
   getBrandCounts,
   getCategoryTiles,
   getHeroProducts,
+  groupLabel,
 } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
 import HeroSlider from "@/components/HeroSlider";
@@ -69,7 +70,7 @@ export default function HomePage() {
           eyebrow,
           price: formatPrice(product.price ?? product.price_min),
           image: product.images[0]?.src ?? "",
-          category: product.categories[0]?.name ?? "Vape",
+          category: groupLabel(product.group),
         }))}
       />
 
@@ -104,18 +105,18 @@ export default function HomePage() {
                   alt={t.label}
                   fill
                   sizes="(max-width: 640px) 50vw, 25vw"
-                  className="object-cover brightness-[0.5] saturate-[0.65] transition duration-500 group-hover:scale-105 group-hover:brightness-[0.65]"
+                  className="bg-white object-cover transition duration-500 group-hover:scale-105"
                 />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-earth/85 via-earth/10 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-4">
                 <div>
-                  <p className="font-display text-xl text-white">{t.label}</p>
-                  <p className="text-[10px] text-white/50">
+                  <p className="font-display text-xl text-[#f5eee0]">{t.label}</p>
+                  <p className="text-[10px] text-[#d8c9a8]/80">
                     {t.count.toLocaleString()} products
                   </p>
                 </div>
-                <span className="text-accent opacity-0 transition group-hover:opacity-100">→</span>
+                <span className="text-[#e9b44c] opacity-0 transition group-hover:opacity-100">→</span>
               </div>
             </Link>
           ))}

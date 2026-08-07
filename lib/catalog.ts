@@ -3,7 +3,15 @@ import path from "node:path";
 
 // src is rewritten at load time to the local /img/ route (the supplier's
 // server rate-limits hotlinking); remote keeps the original URL as fallback.
-export type CatalogImage = { src: string; alt: string; local: string; remote: string };
+// width/height are measured from the downloaded files (scripts/measure-images.mjs).
+export type CatalogImage = {
+  src: string;
+  alt: string;
+  local: string;
+  remote: string;
+  width: number;
+  height: number;
+};
 
 export type Product = {
   id: number;
@@ -146,8 +154,19 @@ type RawProduct = Omit<Product, "group" | "images"> & {
 
 let cache: Product[] | null = null;
 
+function loadImageMeta(): Record<string, [number, number]> {
+  try {
+    return JSON.parse(
+      readFileSync(path.join(process.cwd(), "catalog", "image-meta.json"), "utf8")
+    );
+  } catch {
+    return {};
+  }
+}
+
 export function getProducts(): Product[] {
   if (!cache) {
+    const meta = loadImageMeta();
     const file = path.join(process.cwd(), "catalog", "products.json");
     const raw = JSON.parse(readFileSync(file, "utf8")) as RawProduct[];
     cache = dedupe(
@@ -155,11 +174,11 @@ export function getProducts(): Product[] {
         ...p,
         name: decodeEntities(p.name),
         categories: p.categories.map((c) => ({ ...c, name: decodeEntities(c.name) })),
-        images: p.images.map((im) => ({
-          ...im,
-          remote: im.src,
-          src: `/img/${im.local.replace(/^images\//, "")}`,
-        })),
+        images: p.images.map((im) => {
+          const name = im.local.replace(/^images\//, "");
+          const [width, height] = meta[name] ?? [0, 0];
+          return { ...im, remote: im.src, src: `/img/${name}`, width, height };
+        }),
         description_html: cleanDescription(p.description_html),
         description_text: p.description_text.replace(
           /Aussie Vape Mart( Australia)?/gi,
@@ -308,36 +327,45 @@ function popularity(p: Product): number {
   );
 }
 
-// Hand-picked hero heroes with graceful fallbacks to any popular product
-const HERO_PICKS: { match: RegExp; eyebrow: string }[] = [
-  { match: /geek bar pulse x/i, eyebrow: "Best Seller" },
-  { match: /iget bar\b/i, eyebrow: "Australia's Favourite" },
-  { match: /alibarbar (ingot|upload)/i, eyebrow: "Big Puffs, Big Value" },
-  { match: /iget moon/i, eyebrow: "New Arrival" },
-];
+// Homepage features only well-photographed listings: 3+ product images
+// (owner rule) AND a high-resolution primary shot, measured from the
+// actual files — no upscaled 300px thumbnails on the front page.
+const wellShot = (p: Product) =>
+  sellable(p) && p.images.length >= 3 && (p.images[0]?.width ?? 0) >= 700;
+
+const HERO_EYEBROWS = ["Top Shelf", "Premium Pick", "Staff Favourite", "Trending Now"];
 
 export function getHeroProducts(): { product: Product; eyebrow: string }[] {
-  // Bundles / multi-packs make weak hero shots — single products only
-  const pool = getProducts().filter(
-    (p) => sellable(p) && !/bundle|\(\d+\s*pcs\)|bulk buy/i.test(p.name)
-  );
+  // Bundles / multi-packs make weak hero shots — single products only.
+  // AU$50+ keeps cheap accessories off the marquee. Rank by photo
+  // resolution, prefer one product per group for variety.
+  const pool = getProducts()
+    .filter(
+      (p) =>
+        wellShot(p) &&
+        (p.price ?? p.price_min ?? 0) >= 50 &&
+        !/bundle|\(\d+\s*pcs\)|bulk buy/i.test(p.name)
+    )
+    .sort(
+      (a, b) =>
+        (b.images[0]?.width ?? 0) - (a.images[0]?.width ?? 0) ||
+        popularity(b) - popularity(a)
+    );
   const slides: { product: Product; eyebrow: string }[] = [];
-  const used = new Set<number>();
-  for (const pick of HERO_PICKS) {
-    const p = pool.find((x) => !used.has(x.id) && pick.match.test(x.name));
-    if (p) {
-      used.add(p.id);
-      slides.push({ product: p, eyebrow: pick.eyebrow });
+  const usedGroups = new Set<string>();
+  for (const p of pool) {
+    if (slides.length >= 4) break;
+    if (usedGroups.has(p.group)) continue;
+    usedGroups.add(p.group);
+    slides.push({ product: p, eyebrow: HERO_EYEBROWS[slides.length] });
+  }
+  for (const p of pool) {
+    if (slides.length >= 4) break;
+    if (!slides.some((s) => s.product.id === p.id)) {
+      slides.push({ product: p, eyebrow: HERO_EYEBROWS[slides.length] });
     }
   }
-  for (const p of [...pool].sort((a, b) => popularity(b) - popularity(a))) {
-    if (slides.length >= 3) break;
-    if (!used.has(p.id)) {
-      used.add(p.id);
-      slides.push({ product: p, eyebrow: "Trending Now" });
-    }
-  }
-  return slides.slice(0, 4);
+  return slides;
 }
 
 export function getCategoryTiles(): {
@@ -350,9 +378,13 @@ export function getCategoryTiles(): {
   return getGroupCounts()
     .filter((g) => g.key !== "other")
     .map((g) => {
-      const rep = products
-        .filter((p) => p.group === g.key && sellable(p))
-        .sort((a, b) => popularity(b) - popularity(a))[0];
+      const rep =
+        products
+          .filter((p) => p.group === g.key && wellShot(p))
+          .sort((a, b) => popularity(b) - popularity(a))[0] ??
+        products
+          .filter((p) => p.group === g.key && sellable(p))
+          .sort((a, b) => popularity(b) - popularity(a))[0];
       return { ...g, image: rep?.images[0]?.src ?? null };
     });
 }
@@ -385,7 +417,7 @@ export function getBrandCounts(): { name: string; count: number }[] {
 
 export function getBestSellers(limit = 8): Product[] {
   return [...getProducts()]
-    .filter(sellable)
+    .filter(wellShot)
     .sort((a, b) => popularity(b) - popularity(a))
     .slice(0, limit);
 }

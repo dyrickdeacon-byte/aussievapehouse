@@ -1,26 +1,27 @@
 @import "tailwindcss";
 
 /*
-  Oceania palette — Australian earth tones:
-  red ochre / burnt sienna accent, yellow-ochre secondary, eucalyptus teal
-  highlight, warm charcoal backgrounds (like scorched bark, not neutral black),
-  and Aboriginal-inspired dot-work motifs used as decorative texture.
+  Oceania sandstone theme — a light, warm design built on Australian earth:
+  desert-sand backgrounds, terracotta CTAs, ochre highlights, eucalyptus
+  green touches, deep-earth footer, and Aboriginal-inspired dot-work motifs.
+  Deliberately the opposite of the dark/neon reference design.
 */
 :root {
-  --background: #0d0a07;
-  --surface: #151009;
-  --surface-2: #1d160d;
-  --surface-3: #261d12;
-  --border: #2c2214;
-  --border-2: #3e2f1c;
-  --foreground: #f4ede1;
-  --muted: #a8977f;
-  --accent: #d4551a;
-  --accent-2: #b8430f;
-  --ochre: #dda032;
-  --eucalypt: #3f8f7d;
-  --glow: rgba(212, 85, 26, 0.16);
-  --dim: rgba(212, 85, 26, 0.08);
+  --background: #f5eee0;
+  --surface: #fdf9f0;
+  --surface-2: #efe6d1;
+  --surface-3: #e8dcc0;
+  --border: #e0d3b6;
+  --border-2: #c9b58d;
+  --foreground: #2a2115;
+  --muted: #7d6e57;
+  --accent: #b4451c;
+  --accent-2: #93370f;
+  --ochre: #9c731a;
+  --eucalypt: #2f6d5f;
+  --earth: #241a0e;
+  --glow: rgba(180, 69, 28, 0.22);
+  --dim: rgba(180, 69, 28, 0.08);
 }
 
 @theme inline {
@@ -36,6 +37,7 @@
   --color-accent-2: var(--accent-2);
   --color-ochre: var(--ochre);
   --color-eucalypt: var(--eucalypt);
+  --color-earth: var(--earth);
   --font-sans: var(--font-inter);
   --font-display: var(--font-bebas);
 }
@@ -52,7 +54,7 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* Announcement ticker — ochre earth gradient */
+/* Announcement ticker — deep earth band with sand text */
 @keyframes ticker {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
@@ -63,55 +65,50 @@ body {
   animation: ticker 40s linear infinite;
   white-space: nowrap;
 }
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
 .announce {
-  background: linear-gradient(90deg, #5c2508, #94400f, #d4551a, #b06a14, #5c2508);
-  background-size: 300% 100%;
-  animation: gradient-shift 8s ease infinite;
+  background: linear-gradient(90deg, #241a0e, #4a3010, #241a0e);
+  color: #eddfc2;
 }
 
-/* ── Dot-work motifs ── */
+/* ── Dot-work motifs (tuned for the light ground) ── */
 
-/* A single row of painted dots, used under section headings */
 .dot-row {
   height: 6px;
   width: 120px;
-  background-image: radial-gradient(circle 2.5px at 8px 50%, var(--ochre) 2.4px, transparent 2.6px);
+  background-image: radial-gradient(circle 2.5px at 8px 50%, var(--accent) 2.4px, transparent 2.6px);
   background-size: 16px 6px;
   background-repeat: repeat-x;
-  opacity: 0.85;
+  opacity: 0.75;
 }
 
-/* Sparse dot field for section backgrounds */
 .dot-field {
   background-image:
-    radial-gradient(circle 1.6px at 12% 25%, rgba(221, 160, 50, 0.35) 1.5px, transparent 1.7px),
-    radial-gradient(circle 1.2px at 68% 60%, rgba(212, 85, 26, 0.3) 1.1px, transparent 1.3px),
-    radial-gradient(circle 1.8px at 38% 82%, rgba(63, 143, 125, 0.28) 1.7px, transparent 1.9px),
-    radial-gradient(circle 1.3px at 88% 18%, rgba(221, 160, 50, 0.3) 1.2px, transparent 1.4px);
+    radial-gradient(circle 1.8px at 12% 25%, rgba(156, 115, 26, 0.4) 1.7px, transparent 1.9px),
+    radial-gradient(circle 1.4px at 68% 60%, rgba(180, 69, 28, 0.35) 1.3px, transparent 1.5px),
+    radial-gradient(circle 2px at 38% 82%, rgba(47, 109, 95, 0.32) 1.9px, transparent 2.1px),
+    radial-gradient(circle 1.5px at 88% 18%, rgba(156, 115, 26, 0.35) 1.4px, transparent 1.6px);
   background-size: 220px 180px;
 }
 
-/* Concentric dotted rings — waterhole/meeting-place inspired decoration */
+/* Concentric dotted rings — waterhole/meeting-place inspired */
 .art-rings {
   border-radius: 9999px;
   background: repeating-radial-gradient(
     circle at center,
-    rgba(221, 160, 50, 0.22) 0 2px,
+    rgba(156, 115, 26, 0.35) 0 2px,
     transparent 2px 14px,
-    rgba(212, 85, 26, 0.16) 14px 16px,
+    rgba(180, 69, 28, 0.28) 14px 16px,
     transparent 16px 28px
   );
   -webkit-mask-image: radial-gradient(circle, black 30%, transparent 72%);
   mask-image: radial-gradient(circle, black 30%, transparent 72%);
 }
 
-/* Accent glow helpers */
-.glow-accent { box-shadow: 0 0 24px var(--glow); }
-.glow-img { filter: drop-shadow(0 0 48px var(--glow)) drop-shadow(0 20px 40px rgba(0, 0, 0, 0.7)); }
+/* Soft warm shadows instead of neon glow */
+.glow-accent { box-shadow: 0 6px 20px var(--glow); }
+.glow-img {
+  filter: drop-shadow(0 18px 28px rgba(42, 33, 21, 0.28));
+}
 
 /* WhatsApp float pulse */
 @keyframes wa-pulse {

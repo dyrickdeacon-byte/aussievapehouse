@@ -38,11 +38,11 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40">
       {/* Announcement ticker */}
-      <div className="announce overflow-hidden py-1.5 text-xs font-semibold tracking-wide text-orange-50">
+      <div className="announce overflow-hidden py-1.5 text-xs font-semibold tracking-wide">
         <div className="ticker-row">
           {[...TICKER, ...TICKER].map((t, i) => (
             <span key={i}>
-              <span className="mr-2 text-orange-200">✦</span>
+              <span className="mr-2 text-[#e9b44c]">●</span>
               {t}
             </span>
           ))}

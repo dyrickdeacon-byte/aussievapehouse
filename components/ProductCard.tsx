@@ -17,7 +17,7 @@ export default function ProductCard({ product }: { product: Product }) {
       : null;
 
   return (
-    <div className="group overflow-hidden rounded-xl border border-line bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/60 hover:shadow-[0_12px_40px_rgba(0,0,0,.6)]">
+    <div className="group overflow-hidden rounded-xl border border-line bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-[0_14px_32px_rgba(60,45,25,.16)]">
       <Link href={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden bg-white">
         {img ? (
           <Image
