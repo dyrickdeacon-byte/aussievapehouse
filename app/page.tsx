@@ -13,6 +13,7 @@ import { formatPrice } from "@/lib/format";
 import HeroSlider from "@/components/HeroSlider";
 import ProductCard from "@/components/ProductCard";
 import Faq from "@/components/Faq";
+import Reviews from "@/components/Reviews";
 import NewsletterForm from "@/components/NewsletterForm";
 import Medallion, { MedallionDivider } from "@/components/Medallion";
 
@@ -323,8 +324,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FAQ */}
+      {/* Reviews */}
       <section className="border-t border-line">
+        <div className="mx-auto max-w-[1380px] px-4 py-16">
+          <SectionHead eyebrow="What Customers Say" title="Reviews" medallion={0} />
+          <Reviews />
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="border-t border-line bg-surface/50">
         <div className="mx-auto max-w-[820px] px-4 py-16">
           <SectionHead eyebrow="Common Questions" title="Frequently asked" medallion={4} />
           <Faq />
