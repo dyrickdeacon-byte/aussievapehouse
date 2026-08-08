@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
     ],
   },
   images: {
+    // Every product image is pre-optimised to webp at build/source time
+    // (scripts/optimise-images.mjs, scripts/source-products.mjs), so we
+    // serve them as plain static files. Vercel's Hobby image-optimisation
+    // quota was returning 402 for EVERY image on the live site.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",

@@ -15,8 +15,10 @@ const PAGES = [
   "/shop?group=glass",
 ];
 
-// Next serialises these into HTML with &amp; entities
-const IMG_RE = /\/_next\/image\?url=([^&"\\]+)&(?:amp;)?w=(\d+)&(?:amp;)?q=(\d+)/g;
+// Optimised URLs (when the optimiser is on) and plain static srcs (when
+// images.unoptimized is set — our production setup).
+const OPTIMISED_RE = /\/_next\/image\?url=([^&"\\]+)&(?:amp;)?w=(\d+)&(?:amp;)?q=(\d+)/g;
+const STATIC_RE = /(?:src|srcSet)="(\/(?:products|sourced|uploads)\/[^"\s]+?\.(?:webp|jpg|jpeg|png|avif))"/g;
 
 const urls = new Set();
 for (const page of PAGES) {
@@ -24,9 +26,10 @@ for (const page of PAGES) {
     const html = await (
       await fetch(BASE + page, { signal: AbortSignal.timeout(120000) })
     ).text();
-    for (const m of html.matchAll(IMG_RE)) {
+    for (const m of html.matchAll(OPTIMISED_RE)) {
       urls.add(`/_next/image?url=${m[1]}&w=${m[2]}&q=${m[3]}`);
     }
+    for (const m of html.matchAll(STATIC_RE)) urls.add(m[1]);
   } catch (e) {
     console.log(`page failed: ${page} — ${e.message}`);
   }

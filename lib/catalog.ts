@@ -346,15 +346,19 @@ function getBaseProducts(): Product[] {
         images: p.images.map((im) => {
           const name = im.local.replace(/^images\//, "");
           const [width, height] = meta[name] ?? [0, 0];
+          // Served as a pre-optimised static webp from public/products/
+          // (scripts/optimise-images.mjs) — deploys with the app, no
+          // image-optimiser quota and no hotlinking the supplier.
+          const webp = name.replace(/\.[a-z0-9]+$/i, "") + ".webp";
           return {
             ...im,
             // some scraped alts hold an entire markdown description
             // (complete with the old store's branding) — keep alts short
             alt: cleanAltText(im.alt, p.name),
             remote: im.src,
-            src: `/img/${name}`,
-            width,
-            height,
+            src: `/products/${webp}`,
+            width: Math.min(width || 800, 800),
+            height: Math.min(height || 800, 800),
           };
         }),
         description_html: cleanDescription(p.description_html),

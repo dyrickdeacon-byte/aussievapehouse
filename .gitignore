@@ -56,4 +56,5 @@ data/email-log.jsonl
 !.env.example
 data/admin-auth.json
 public/uploads/
+# public/products/ IS committed - it is the deployable product imagery
 data/custom-products.json
