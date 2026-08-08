@@ -53,13 +53,13 @@ export default async function ShopPage({
     sort: (str(params.sort) as SearchOptions["sort"]) ?? "featured",
     page: Number(str(params.page) ?? 1) || 1,
   };
-  const { items, total, page, pages } = searchProducts(opts);
-  const groups = getGroupCounts();
-  const categories = getCategoriesForGroup(group ?? null).slice(0, 20);
+  const { items, total, page, pages } = await searchProducts(opts);
+  const groups = await getGroupCounts();
+  const categories = (await getCategoriesForGroup(group ?? null)).slice(0, 20);
   // Refine pills appear once the shopper has narrowed to a category —
   // paging through 20 pages is not a filter strategy
-  const refineBrands = group ? getBrandsForGroup(group) : [];
-  const refineFlavours = group ? getFlavoursForGroup(group) : [];
+  const refineBrands = group ? await getBrandsForGroup(group) : [];
+  const refineFlavours = group ? await getFlavoursForGroup(group) : [];
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">

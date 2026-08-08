@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { getCustomProducts, type CustomProduct } from "@/lib/products-custom";
 import path from "node:path";
 
 // src is rewritten at load time to the local /img/ route (the supplier's
@@ -41,6 +42,10 @@ export type Product = {
   images: CatalogImage[];
   /** Normalised top-level group, computed at load time */
   group: GroupKey;
+  /** ISO date — set for owner-added products (drives "newest first") */
+  createdAt?: string;
+  /** True for products created in the admin dashboard */
+  isCustom?: boolean;
 };
 
 export const GROUPS = [
@@ -314,7 +319,7 @@ function loadImageMeta(): Record<string, [number, number]> {
   }
 }
 
-export function getProducts(): Product[] {
+function getBaseProducts(): Product[] {
   if (!cache) {
     const meta = loadImageMeta();
     const file = path.join(process.cwd(), "catalog", "products.json");
@@ -343,13 +348,73 @@ export function getProducts(): Product[] {
   return cache;
 }
 
-export function getProductBySlug(slug: string): Product | undefined {
-  return getProducts().find((p) => p.slug === slug);
+// Owner-added products (admin dashboard) mapped into the catalog shape so
+// they behave exactly like built-in ones: product page, search, categories,
+// cart. They carry createdAt so "newest first" can float them to the top.
+function customToProduct(c: CustomProduct): Product {
+  return {
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    sku: null,
+    type: "simple",
+    permalink: `/product/${c.slug}`,
+    categories: [{ id: 0, name: c.categoryName || groupLabel(c.group), slug: c.group }],
+    tags: [],
+    brands: c.brand ? [c.brand] : [],
+    currency: "AUD",
+    price: c.price,
+    regular_price: c.regular_price,
+    sale_price: c.price,
+    price_min: null,
+    price_max: null,
+    on_sale: !!c.regular_price && c.regular_price > c.price,
+    in_stock: c.in_stock,
+    description_html: c.descriptionHtml,
+    description_text: c.descriptionHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+    short_description_text: "",
+    attributes: [],
+    has_options: false,
+    average_rating: "5",
+    review_count: 0,
+    images: c.images.map((im) => ({
+      src: im.src,
+      alt: im.alt || c.name,
+      local: im.src,
+      remote: im.src,
+      width: im.width,
+      height: im.height,
+    })),
+    group: c.group,
+    createdAt: c.createdAt,
+    isCustom: true,
+  };
 }
 
-export function getGroupCounts(): { key: GroupKey; label: string; count: number }[] {
+// Merged catalog: owner-added products first (newest first), then the
+// scraped catalog. Products with no real photo are excluded entirely
+// (owner rule) — 144 supplier listings the supplier never photographed.
+export async function getProducts(): Promise<Product[]> {
+  let custom: Product[] = [];
+  try {
+    custom = (await getCustomProducts()).map(customToProduct);
+  } catch (e) {
+    console.error("[catalog] custom products unavailable:", e);
+  }
+  const customSlugs = new Set(custom.map((p) => p.slug));
+  const base = getBaseProducts().filter(
+    (p) => !!primaryImage(p) && !customSlugs.has(p.slug)
+  );
+  return [...custom, ...base];
+}
+
+export async function getProductBySlug(slug: string): Promise<Product | undefined> {
+  return (await getProducts()).find((p) => p.slug === slug);
+}
+
+export async function getGroupCounts(): Promise<{ key: GroupKey; label: string; count: number }[]> {
   const counts = new Map<GroupKey, number>();
-  for (const p of getProducts()) {
+  for (const p of await getProducts()) {
     counts.set(p.group, (counts.get(p.group) ?? 0) + 1);
   }
   return GROUPS.filter((g) => (counts.get(g.key) ?? 0) > 0).map((g) => ({
@@ -359,11 +424,11 @@ export function getGroupCounts(): { key: GroupKey; label: string; count: number 
   }));
 }
 
-export function getCategoriesForGroup(
+export async function getCategoriesForGroup(
   group: GroupKey | null
-): { slug: string; name: string; count: number }[] {
+): Promise<{ slug: string; name: string; count: number }[]> {
   const counts = new Map<string, { name: string; count: number }>();
-  for (const p of getProducts()) {
+  for (const p of await getProducts()) {
     if (group && p.group !== group) continue;
     for (const c of p.categories) {
       const cur = counts.get(c.slug);
@@ -411,8 +476,8 @@ function matchesTerm(p: Product, term: string): boolean {
   );
 }
 
-export function getBrandsForGroup(group?: string | null): { name: string; count: number }[] {
-  const pool = getProducts().filter((p) => !group || p.group === group);
+export async function getBrandsForGroup(group?: string | null): Promise<{ name: string; count: number }[]> {
+  const pool = (await getProducts()).filter((p) => !group || p.group === group);
   return BRAND_LIST.map((name) => ({
     name,
     count: pool.filter((p) => matchesTerm(p, name)).length,
@@ -422,8 +487,8 @@ export function getBrandsForGroup(group?: string | null): { name: string; count:
     .slice(0, 14);
 }
 
-export function getFlavoursForGroup(group?: string | null): { name: string; count: number }[] {
-  const pool = getProducts().filter((p) => !group || p.group === group);
+export async function getFlavoursForGroup(group?: string | null): Promise<{ name: string; count: number }[]> {
+  const pool = (await getProducts()).filter((p) => !group || p.group === group);
   return FLAVOUR_LIST.map((name) => ({
     name,
     count: pool.filter((p) => new RegExp(name, "i").test(p.name)).length,
@@ -433,14 +498,14 @@ export function getFlavoursForGroup(group?: string | null): { name: string; coun
     .slice(0, 16);
 }
 
-export function searchProducts(opts: SearchOptions): {
+export async function searchProducts(opts: SearchOptions): Promise<{
   items: Product[];
   total: number;
   page: number;
   pages: number;
-} {
+}> {
   const perPage = opts.perPage ?? 24;
-  let items = getProducts();
+  let items = await getProducts();
 
   if (opts.group) items = items.filter((p) => p.group === opts.group);
   if (opts.category)
@@ -486,6 +551,18 @@ export function searchProducts(opts: SearchOptions): {
   for (const p of items) (primaryImage(p) ? withPhoto : withoutPhoto).push(p);
   items = [...withPhoto, ...withoutPhoto];
 
+  // Owner-added products lead their category on the default sort (newest
+  // first among themselves); explicit price/name sorts are left alone.
+  if (!opts.sort || opts.sort === "featured") {
+    const fresh = items
+      .filter((p) => p.isCustom)
+      .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+    if (fresh.length) {
+      const freshIds = new Set(fresh.map((p) => p.id));
+      items = [...fresh, ...items.filter((p) => !freshIds.has(p.id))];
+    }
+  }
+
   const total = items.length;
   const pages = Math.max(1, Math.ceil(total / perPage));
   const page = Math.min(Math.max(1, opts.page ?? 1), pages);
@@ -497,10 +574,10 @@ export function searchProducts(opts: SearchOptions): {
   };
 }
 
-export function getFeatured(limit = 8): Product[] {
+export async function getFeatured(limit = 8): Promise<Product[]> {
   const seen = new Set<GroupKey>();
   const picks: Product[] = [];
-  const pool = getProducts().filter(
+  const pool = (await getProducts()).filter(
     (p) => p.in_stock && p.images.length > 0 && (p.price ?? p.price_min ?? 0) > 0
   );
   // First pass: one popular product per group for variety
@@ -559,16 +636,16 @@ const HERO_EYEBROWS = [
 
 // Owner rule: the hero rotates the client's high-demand lines — products
 // NOT already shown elsewhere on the homepage (pass those ids to exclude).
-export function getHeroProducts(
+export async function getHeroProducts(
   excludeIds: number[] = [],
   limit = 9
-): { product: Product; eyebrow: string }[] {
+): Promise<{ product: Product; eyebrow: string }[]> {
   const excluded = new Set(excludeIds);
   // Hero shots must be high-res (≥700px measured) — no fuzzy thumbnails.
   // Only two high-demand lines have such photos, so: those first (max 2
   // slides each), then other sharp-shot products for variety — never the
   // same two brands ping-ponging all nine slides.
-  const pool = getProducts().filter(
+  const pool = (await getProducts()).filter(
     (p) =>
       sellable(p) &&
       (primaryImage(p)?.width ?? 0) >= 700 &&
@@ -630,14 +707,14 @@ export function getHeroProducts(
   }));
 }
 
-export function getCategoryTiles(): {
+export async function getCategoryTiles(): Promise<{
   key: GroupKey;
   label: string;
   count: number;
   image: string | null;
-}[] {
-  const products = getProducts();
-  return getGroupCounts()
+}[]> {
+  const products = await getProducts();
+  return (await getGroupCounts())
     .filter((g) => g.key !== "other")
     .map((g) => {
       const rep =
@@ -680,8 +757,8 @@ const HIGH_DEMAND_LINES: { name: string; match: RegExp }[] = [
   { name: "Alibarbar", match: /alibarbar/i },
 ];
 
-export function getHighDemand(limit = 10): Product[] {
-  const pool = getProducts().filter(
+export async function getHighDemand(limit = 10): Promise<Product[]> {
+  const pool = (await getProducts()).filter(
     (p) =>
       sellable(p) &&
       primaryImage(p) &&
@@ -720,8 +797,8 @@ export function getHighDemand(limit = 10): Product[] {
   return picks.slice(0, limit);
 }
 
-export function getBrandCounts(): { name: string; count: number }[] {
-  const products = getProducts();
+export async function getBrandCounts(): Promise<{ name: string; count: number }[]> {
+  const products = await getProducts();
   return BRAND_DEFS.map((name) => {
     const re = new RegExp(name.replace(/\s+/g, "\\s*"), "i");
     return {
@@ -733,13 +810,13 @@ export function getBrandCounts(): { name: string; count: number }[] {
   }).filter((b) => b.count >= 10);
 }
 
-export function getBestSellers(limit = 8): Product[] {
+export async function getBestSellers(limit = 8): Promise<Product[]> {
   // Owner rule: at most 2 accessory-type products in the featured grid
   const isAccessory = (p: Product) =>
     p.group === "accessories" ||
     p.group === "coils" ||
     /accessor/i.test(p.categories[0]?.name ?? "");
-  const ranked = [...getProducts()]
+  const ranked = [...(await getProducts())]
     .filter(wellShot)
     .sort(
       (a, b) =>
@@ -759,10 +836,10 @@ export function getBestSellers(limit = 8): Product[] {
   return picks;
 }
 
-export function getRelated(product: Product, limit = 4): Product[] {
+export async function getRelated(product: Product, limit = 4): Promise<Product[]> {
   const catSlugs = new Set(product.categories.map((c) => c.slug));
   // Owner rule: no photo-less products in "You might also like"
-  const same = getProducts().filter(
+  const same = (await getProducts()).filter(
     (p) =>
       p.id !== product.id &&
       p.in_stock &&

@@ -27,6 +27,9 @@ export default async function AdminLayout({
           <Link href="/admin/orders" className="rounded-md px-3 py-1.5 text-muted transition hover:bg-surface hover:text-foreground">
             Orders
           </Link>
+          <Link href="/admin/products" className="rounded-md px-3 py-1.5 text-muted transition hover:bg-surface hover:text-foreground">
+            Products
+          </Link>
           <Link href="/admin/settings" className="rounded-md px-3 py-1.5 text-muted transition hover:bg-surface hover:text-foreground">
             Settings
           </Link>

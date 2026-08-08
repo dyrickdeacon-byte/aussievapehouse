@@ -7,7 +7,7 @@ export async function GET() {
   if (process.env.NODE_ENV === "production") {
     return new NextResponse("Not found", { status: 404 });
   }
-  const products = getProducts();
+  const products = await getProducts();
   const issues: Record<string, string[]> = {
     storeLeak: [],
     cssInDescription: [],

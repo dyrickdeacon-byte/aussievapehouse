@@ -9,6 +9,7 @@ export default async function AdminDashboard() {
   const orders = await readOrders();
   const settings = await getSettings();
   const subscribers = await hashCount("subscribers");
+  const customProducts = await hashCount("custom-products");
   const newOrders = orders.filter((o) => o.status === "new" || o.status === "awaiting-payment");
   const revenue = orders
     .filter((o) => o.status === "paid" || o.status === "shipped")
@@ -19,6 +20,7 @@ export default async function AdminDashboard() {
     { label: "Total orders", value: orders.length, href: "/admin/orders" },
     { label: "Revenue (paid + shipped)", value: `AU$${revenue.toFixed(2)}`, href: "/admin/orders" },
     { label: "Subscribers", value: subscribers, href: "/admin" },
+    { label: "Products you added", value: customProducts, href: "/admin/products" },
   ];
 
   return (

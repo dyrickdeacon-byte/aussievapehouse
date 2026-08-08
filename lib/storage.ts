@@ -121,6 +121,22 @@ export async function hashSet(hash: string, field: string, value: unknown): Prom
   fsWrite(hash, map);
 }
 
+export async function hashDelete(hash: string, field: string): Promise<void> {
+  if (useSupabase()) {
+    const db = await supabase();
+    const { error } = await db
+      .from(TABLE)
+      .delete()
+      .eq("bucket", hash)
+      .eq("key", field);
+    if (error) fail(`delete ${hash}/${field}`, error);
+    return;
+  }
+  const map = await hashGetAll<unknown>(hash);
+  delete map[field];
+  fsWrite(hash, map);
+}
+
 export async function hashHas(hash: string, field: string): Promise<boolean> {
   if (useSupabase()) {
     const db = await supabase();

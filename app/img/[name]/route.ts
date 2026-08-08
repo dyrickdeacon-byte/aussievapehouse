@@ -20,14 +20,15 @@ const MIME: Record<string, string> = {
 };
 
 let remoteBySlugFile: Map<string, string> | null = null;
-function remoteFor(name: string): string | null {
+async function remoteFor(name: string): Promise<string | null> {
   if (!remoteBySlugFile) {
-    remoteBySlugFile = new Map();
-    for (const p of getProducts()) {
+    const map = new Map<string, string>();
+    for (const p of await getProducts()) {
       for (const im of p.images) {
-        remoteBySlugFile.set(path.basename(im.local), im.remote);
+        map.set(path.basename(im.local), im.remote);
       }
     }
+    remoteBySlugFile = map;
   }
   return remoteBySlugFile.get(name) ?? null;
 }
@@ -44,7 +45,7 @@ export async function GET(
 
   const file = path.join(IMG_DIR, name);
   if (!existsSync(file)) {
-    const remote = remoteFor(name);
+    const remote = await remoteFor(name);
     if (remote) return Response.redirect(remote, 302);
     return new Response("Not found", { status: 404 });
   }

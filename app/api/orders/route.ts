@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
   }
   // Re-price server-side — never trust client prices
-  const catalog = new Map(getProducts().map((p) => [p.id, p]));
+  const catalog = new Map((await getProducts()).map((p) => [p.id, p]));
   const items: OrderItem[] = [];
   for (const it of rawItems) {
     const p = catalog.get(Number(it.id));

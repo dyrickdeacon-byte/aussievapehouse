@@ -143,13 +143,13 @@ function SectionHead({
   );
 }
 
-export default function HomePage() {
-  const tiles = getCategoryTiles();
-  const bestSellers = getBestSellers(8);
-  const brands = getBrandCounts();
-  const highDemand = getHighDemand(10);
+export default async function HomePage() {
+  const tiles = await getCategoryTiles();
+  const bestSellers = await getBestSellers(8);
+  const brands = await getBrandCounts();
+  const highDemand = await getHighDemand(10);
   // Hero rotates high-demand products NOT already carded on the homepage
-  const heroes = getHeroProducts(
+  const heroes = await getHeroProducts(
     [...highDemand, ...bestSellers].map((p) => p.id),
     9
   );

@@ -17,6 +17,12 @@ const nextConfig: NextConfig = {
         hostname: "aussievapemart.com.au",
         pathname: "/wp-content/uploads/**",
       },
+      // admin-uploaded product images (Supabase Storage)
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
     ],
   },
 };

@@ -18,7 +18,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   return { title: product?.name ?? "Product not found" };
 }
 
@@ -28,7 +28,7 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
   const hasRange =
@@ -36,7 +36,7 @@ export default async function ProductPage({
   const priceLabel = hasRange
     ? formatPriceRange(product.price_min, product.price_max)
     : formatPrice(product.price ?? product.price_min);
-  const related = getRelated(product, 4);
+  const related = await getRelated(product, 4);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
