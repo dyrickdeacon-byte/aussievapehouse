@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "No valid items" }, { status: 400 });
   }
 
-  const settings = getSettings();
+  const settings = await getSettings();
   const method = String(body.paymentMethod ?? "bank");
   const subtotal = items.reduce((n, i) => n + i.price * i.qty, 0);
   const discount = discountFor(String(body.discountCode ?? ""), subtotal);
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
     total: Math.round((subtotal - discount) * 100) / 100,
   };
 
-  addOrder(order);
+  await addOrder(order);
 
   // Emails are fire-and-forget — a mail outage must not lose the order
   void sendMail({

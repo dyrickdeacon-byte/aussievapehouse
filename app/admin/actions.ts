@@ -15,11 +15,11 @@ import { updateOrderStatus, type OrderStatus } from "@/lib/orders";
 
 export async function loginAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
-  if (!passwordMatches(password)) {
+  if (!(await passwordMatches(password))) {
     redirect("/admin/login?error=1");
   }
   const jar = await cookies();
-  jar.set(ADMIN_COOKIE, adminToken(), {
+  jar.set(ADMIN_COOKIE, await adminToken(), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
@@ -36,10 +36,10 @@ export async function logoutAction() {
 
 export async function saveSettingsAction(formData: FormData) {
   if (!(await isAdmin())) redirect("/admin/login");
-  const current = getSettings();
+  const current = await getSettings();
   const str = (k: string) => String(formData.get(k) ?? "").trim();
 
-  saveSettings({
+  await saveSettings({
     whatsapp: str("whatsapp"),
     livechatEmbed: str("livechatEmbed"),
     socials: {
@@ -70,14 +70,14 @@ export async function changePasswordAction(formData: FormData) {
   const next = String(formData.get("newPassword") ?? "");
   const confirm = String(formData.get("confirmPassword") ?? "");
 
-  if (!passwordMatches(current)) redirect("/admin/settings?pwerr=wrong");
+  if (!(await passwordMatches(current))) redirect("/admin/settings?pwerr=wrong");
   if (next.length < 8) redirect("/admin/settings?pwerr=short");
   if (next !== confirm) redirect("/admin/settings?pwerr=match");
 
-  setAdminPassword(next);
+  await setAdminPassword(next);
   // Token rotated — refresh this session's cookie so the admin stays in
   const jar = await cookies();
-  jar.set(ADMIN_COOKIE, adminToken(), {
+  jar.set(ADMIN_COOKIE, await adminToken(), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
@@ -90,7 +90,7 @@ export async function setOrderStatusAction(formData: FormData) {
   if (!(await isAdmin())) redirect("/admin/login");
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "new") as OrderStatus;
-  updateOrderStatus(id, status);
+  await updateOrderStatus(id, status);
   revalidatePath("/admin/orders");
   redirect("/admin/orders");
 }

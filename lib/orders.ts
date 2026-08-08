@@ -1,5 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import path from "node:path";
+import { hashGetAll, hashSet } from "@/lib/storage";
 
 export type OrderItem = {
   id: number;
@@ -42,33 +41,26 @@ export type Order = {
   total?: number;
 };
 
-const FILE = () => path.join(process.cwd(), "data", "orders.json");
+const HASH = "orders";
 
-export function readOrders(): Order[] {
-  try {
-    return JSON.parse(readFileSync(FILE(), "utf8"));
-  } catch {
-    return [];
-  }
+export async function readOrders(): Promise<Order[]> {
+  const map = await hashGetAll<Order>(HASH);
+  return Object.values(map).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-function persist(orders: Order[]) {
-  mkdirSync(path.dirname(FILE()), { recursive: true });
-  writeFileSync(FILE(), JSON.stringify(orders, null, 1));
+export async function addOrder(order: Order): Promise<void> {
+  await hashSet(HASH, order.id, order);
 }
 
-export function addOrder(order: Order): void {
-  const orders = readOrders();
-  orders.unshift(order);
-  persist(orders);
-}
-
-export function updateOrderStatus(id: string, status: OrderStatus): boolean {
-  const orders = readOrders();
-  const order = orders.find((o) => o.id === id);
+export async function updateOrderStatus(
+  id: string,
+  status: OrderStatus
+): Promise<boolean> {
+  const map = await hashGetAll<Order>(HASH);
+  const order = map[id];
   if (!order) return false;
   order.status = status;
-  persist(orders);
+  await hashSet(HASH, id, order);
   return true;
 }
 

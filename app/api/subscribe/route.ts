@@ -1,14 +1,14 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
+import { hashHas, hashSet } from "@/lib/storage";
 import {
   sendMail,
   subscribeCustomerHtml,
   subscribeOwnerHtml,
 } from "@/lib/email";
 
-// Captures newsletter signups to data/subscribers.json and sends the
-// welcome email (customer) + notification (owner).
+// Captures newsletter signups (subscribers hash — local JSON in dev,
+// Upstash Redis on Vercel) and sends the welcome email (customer) +
+// notification (owner).
 export async function POST(req: Request) {
   let email: unknown;
   try {
@@ -20,19 +20,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
-  const dir = path.join(process.cwd(), "data");
-  const file = path.join(dir, "subscribers.json");
-  await mkdir(dir, { recursive: true });
-  let list: { email: string; at: string }[] = [];
-  try {
-    list = JSON.parse(await readFile(file, "utf8"));
-  } catch {
-    // first subscriber
-  }
-  const isNew = !list.some((s) => s.email.toLowerCase() === email.toLowerCase());
+  const key = email.trim().toLowerCase();
+  const isNew = !(await hashHas("subscribers", key));
   if (isNew) {
-    list.push({ email, at: new Date().toISOString() });
-    await writeFile(file, JSON.stringify(list, null, 1));
+    await hashSet("subscribers", key, { email: key, at: new Date().toISOString() });
     void sendMail({
       to: email,
       subject: "Your 10% off Aussie Vape House 🎉",

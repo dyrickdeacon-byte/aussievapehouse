@@ -27,8 +27,8 @@ const HELP_LINKS = [
 ];
 
 // Deep-earth block — the dark anchor at the base of the light sandstone page
-export default function Footer() {
-  const settings = getSettings();
+export default async function Footer() {
+  const settings = await getSettings();
   const socials = [
     { url: settings.socials.facebook, label: "Facebook", Icon: FacebookIcon },
     { url: settings.socials.instagram, label: "Instagram", Icon: InstagramIcon },

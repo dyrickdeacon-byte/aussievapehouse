@@ -28,7 +28,7 @@ export default async function AdminSettingsPage({
 }) {
   await requireAdmin();
   const { saved, pwsaved, pwerr } = await searchParams;
-  const s = getSettings();
+  const s = await getSettings();
 
   return (
     <div>

@@ -2,23 +2,13 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { readOrders } from "@/lib/orders";
 import { getSettings } from "@/lib/settings";
-import { readFileSync } from "node:fs";
-import path from "node:path";
-
-function subscriberCount(): number {
-  try {
-    return JSON.parse(
-      readFileSync(path.join(process.cwd(), "data", "subscribers.json"), "utf8")
-    ).length;
-  } catch {
-    return 0;
-  }
-}
+import { hashCount } from "@/lib/storage";
 
 export default async function AdminDashboard() {
   await requireAdmin();
-  const orders = readOrders();
-  const settings = getSettings();
+  const orders = await readOrders();
+  const settings = await getSettings();
+  const subscribers = await hashCount("subscribers");
   const newOrders = orders.filter((o) => o.status === "new" || o.status === "awaiting-payment");
   const revenue = orders
     .filter((o) => o.status === "paid" || o.status === "shipped")
@@ -28,7 +18,7 @@ export default async function AdminDashboard() {
     { label: "Orders needing action", value: newOrders.length, href: "/admin/orders" },
     { label: "Total orders", value: orders.length, href: "/admin/orders" },
     { label: "Revenue (paid + shipped)", value: `AU$${revenue.toFixed(2)}`, href: "/admin/orders" },
-    { label: "Subscribers", value: subscriberCount(), href: "/admin" },
+    { label: "Subscribers", value: subscribers, href: "/admin" },
   ];
 
   return (

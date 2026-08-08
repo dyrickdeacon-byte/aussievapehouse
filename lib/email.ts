@@ -9,15 +9,15 @@ const FROM = () =>
   process.env.MAIL_FROM || "Aussie Vape House <noreply@aussievapehouse.com>";
 
 function logEmail(entry: Record<string, unknown>) {
+  const line = JSON.stringify({ at: new Date().toISOString(), ...entry });
+  // Always emit to stdout — that's what survives on Vercel (function logs)
+  console.log("[email]", line);
   try {
     const dir = path.join(process.cwd(), "data");
     mkdirSync(dir, { recursive: true });
-    appendFileSync(
-      path.join(dir, "email-log.jsonl"),
-      JSON.stringify({ at: new Date().toISOString(), ...entry }) + "\n"
-    );
+    appendFileSync(path.join(dir, "email-log.jsonl"), line + "\n");
   } catch {
-    // logging must never throw
+    // read-only filesystem (Vercel) — stdout log above is enough
   }
 }
 

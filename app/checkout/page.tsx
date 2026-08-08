@@ -3,8 +3,8 @@ import CheckoutForm from "@/components/CheckoutForm";
 
 export const metadata = { title: "Checkout" };
 
-export default function CheckoutPage() {
-  const settings = getSettings();
+export default async function CheckoutPage() {
+  const settings = await getSettings();
   return (
     <CheckoutForm
       mode={settings.payments.mode}

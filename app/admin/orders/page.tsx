@@ -15,7 +15,7 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
 
 export default async function AdminOrdersPage() {
   await requireAdmin();
-  const orders = readOrders();
+  const orders = await readOrders();
 
   return (
     <div>

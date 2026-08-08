@@ -33,8 +33,8 @@ export const metadata: Metadata = {
     "Australia's home of vapes. 2,500+ products — disposables, e-liquids, kits, pods and accessories. Same-day dispatch, discreet packaging, genuine stock.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  const settings = getSettings();
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const settings = await getSettings();
   return (
     <html
       lang="en"

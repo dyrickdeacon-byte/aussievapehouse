@@ -1,5 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import path from "node:path";
+import { fsRead, kvGet, kvSet } from "@/lib/storage";
 
 export type PaymentMethodKey =
   | "bank"
@@ -64,40 +63,28 @@ const DEFAULTS: SiteSettings = {
   },
 };
 
-const FILE = () => path.join(process.cwd(), "data", "site-settings.json");
-
-// Read fresh on every call — the admin panel writes this file and the
-// change should show up without a server restart.
-export function getSettings(): SiteSettings {
-  try {
-    const raw = JSON.parse(readFileSync(FILE(), "utf8"));
-    return {
-      whatsapp: raw.whatsapp ?? "",
-      livechatEmbed: raw.livechatEmbed ?? "",
-      socials: { ...DEFAULTS.socials, ...raw.socials },
-      payments: {
-        mode: raw.payments?.mode === "direct" ? "direct" : "manual",
-        methods: { ...DEFAULTS.payments.methods, ...raw.payments?.methods },
-        otherLabel: raw.payments?.otherLabel ?? "",
-      },
-    };
-  } catch {
-    return structuredClone(DEFAULTS);
-  }
+// Stored under the "site-settings" key (data/site-settings.json locally,
+// Upstash Redis on Vercel). Read fresh on every call so admin saves apply
+// without a restart.
+export async function getSettings(): Promise<SiteSettings> {
+  let raw = await kvGet<Partial<SiteSettings>>("site-settings");
+  // First run on a fresh database: fall back to the committed defaults
+  // file (ships in the repo) so livechat/socials/WhatsApp survive the
+  // initial deploy; the first admin save then persists to the database.
+  if (!raw) raw = fsRead<Partial<SiteSettings>>("site-settings");
+  if (!raw) return structuredClone(DEFAULTS);
+  return {
+    whatsapp: raw.whatsapp ?? "",
+    livechatEmbed: raw.livechatEmbed ?? "",
+    socials: { ...DEFAULTS.socials, ...raw.socials },
+    payments: {
+      mode: raw.payments?.mode === "direct" ? "direct" : "manual",
+      methods: { ...DEFAULTS.payments.methods, ...raw.payments?.methods },
+      otherLabel: raw.payments?.otherLabel ?? "",
+    },
+  };
 }
 
-export function saveSettings(settings: SiteSettings): void {
-  mkdirSync(path.dirname(FILE()), { recursive: true });
-  writeFileSync(
-    FILE(),
-    JSON.stringify(
-      {
-        _note:
-          "Managed by the /admin dashboard. Empty string = feature hidden.",
-        ...settings,
-      },
-      null,
-      1
-    )
-  );
+export async function saveSettings(settings: SiteSettings): Promise<void> {
+  await kvSet("site-settings", settings);
 }
