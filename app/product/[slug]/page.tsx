@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   getProductBySlug,
   getRelated,
   groupLabel,
   primaryImage,
+  resolveRetiredSlug,
 } from "@/lib/catalog";
 import { formatPrice, formatPriceRange } from "@/lib/format";
 import ImageGallery from "@/components/ImageGallery";
@@ -29,7 +30,12 @@ export default async function ProductPage({
 }) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  if (!product) notFound();
+  if (!product) {
+    // A retired duplicate's URL should land on the surviving product
+    const alive = await resolveRetiredSlug(slug);
+    if (alive) redirect(`/product/${alive}`);
+    notFound();
+  }
 
   const hasRange =
     product.price_min != null && product.price_max !== product.price_min;

@@ -268,6 +268,19 @@ function cleanDescription(html: string): string {
   return result;
 }
 
+// Alt text should describe the product, not carry a whole description.
+// Falls back to the product name when the source alt is junk.
+function cleanAltText(alt: string | undefined, productName: string): string {
+  const a = decodeEntities(alt ?? "").replace(/\s+/g, " ").trim();
+  // Leave placeholder markers intact — isPlaceholderImage keys off them to
+  // exclude the listings the supplier never photographed.
+  if (/placeholder/i.test(a)) return a;
+  if (!a || a.length > 120 || /^#|\*\*|\]\(|aussie vape mart|ozvapeshop|vapelink/i.test(a)) {
+    return productName;
+  }
+  return a;
+}
+
 export function isPlaceholderImage(im: { alt?: string } | undefined): boolean {
   return !im || /placeholder/i.test(im.alt ?? "");
 }
@@ -333,7 +346,16 @@ function getBaseProducts(): Product[] {
         images: p.images.map((im) => {
           const name = im.local.replace(/^images\//, "");
           const [width, height] = meta[name] ?? [0, 0];
-          return { ...im, remote: im.src, src: `/img/${name}`, width, height };
+          return {
+            ...im,
+            // some scraped alts hold an entire markdown description
+            // (complete with the old store's branding) — keep alts short
+            alt: cleanAltText(im.alt, p.name),
+            remote: im.src,
+            src: `/img/${name}`,
+            width,
+            height,
+          };
         }),
         description_html: cleanDescription(p.description_html),
         description_text: p.description_text.replace(
@@ -453,6 +475,20 @@ export async function getProducts(): Promise<Product[]> {
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
   return (await getProducts()).find((p) => p.slug === slug);
+}
+
+// Deduping and sourcing drop duplicate listings, so their old slugs would
+// 404. Map a dropped slug to the surviving product with the same name.
+export async function resolveRetiredSlug(slug: string): Promise<string | null> {
+  const raw = JSON.parse(
+    readFileSync(path.join(process.cwd(), "catalog", "products.json"), "utf8")
+  ) as { slug: string; name: string }[];
+  const dropped = raw.find((p) => p.slug === slug);
+  if (!dropped) return null;
+  const target = (await getProducts()).find(
+    (p) => p.name.trim().toLowerCase() === decodeEntities(dropped.name).trim().toLowerCase()
+  );
+  return target && target.slug !== slug ? target.slug : null;
 }
 
 export async function getGroupCounts(): Promise<{ key: GroupKey; label: string; count: number }[]> {
