@@ -65,15 +65,6 @@ export default async function ProductPage({
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <span className="text-2xl font-semibold text-accent">{priceLabel}</span>
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                product.in_stock
-                  ? "bg-accent/10 text-accent"
-                  : "bg-red-500/10 text-red-400"
-              }`}
-            >
-              {product.in_stock ? "In stock" : "Out of stock"}
-            </span>
           </div>
 
           {product.review_count > 0 && (
@@ -112,7 +103,7 @@ export default async function ProductPage({
           )}
 
           <div className="mt-6">
-            {product.in_stock && (product.price ?? product.price_min ?? 0) > 0 ? (
+            {(product.price ?? product.price_min ?? 0) > 0 ? (
               <AddToCartButton
                 product={{
                   id: product.id,
@@ -125,9 +116,7 @@ export default async function ProductPage({
               />
             ) : (
               <p className="rounded-lg border border-line bg-surface px-4 py-3 text-sm text-muted">
-                {product.in_stock
-                  ? "Pricing to be confirmed — check back soon."
-                  : "Currently out of stock."}
+                Pricing to be confirmed — contact us for this item.
               </p>
             )}
           </div>

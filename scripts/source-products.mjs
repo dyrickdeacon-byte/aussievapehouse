@@ -287,7 +287,9 @@ async function main() {
       categoryName: item.src.label,
       descriptionHtml: `<p>${item.description}</p>`,
       images,
-      in_stock: item.inStock,
+      // The source's stock flag describes THEIR warehouse, not this store's.
+      // Availability here is confirmed when the owner processes the order.
+      in_stock: true,
       source: item.src.id,
       sourceCurrency: item.src.currency,
       createdAt: new Date().toISOString(),

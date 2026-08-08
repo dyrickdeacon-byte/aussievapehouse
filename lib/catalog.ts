@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { getCustomProducts, type CustomProduct } from "@/lib/products-custom";
+import { getCustomProducts, slugify, type CustomProduct } from "@/lib/products-custom";
 import path from "node:path";
 
 // src is rewritten at load time to the local /img/ route (the supplier's
@@ -359,7 +359,15 @@ function customToProduct(c: CustomProduct): Product {
     sku: null,
     type: "simple",
     permalink: `/product/${c.slug}`,
-    categories: [{ id: 0, name: c.categoryName || groupLabel(c.group), slug: c.group }],
+    // Own collection slug (not the group) so each collection is separately
+    // filterable in the shop sidebar
+    categories: [
+      {
+        id: 0,
+        name: c.categoryName || groupLabel(c.group),
+        slug: slugify(c.categoryName || groupLabel(c.group)),
+      },
+    ],
     tags: [],
     brands: c.brand ? [c.brand] : [],
     currency: "AUD",
@@ -488,11 +496,17 @@ export type SearchOptions = {
 };
 
 // Known brands across the catalog — used for the shop's refine pills
+// Ordered most-specific first so "IGET Bar Pro" wins over plain "IGET"
 const BRAND_LIST = [
-  "Geek Bar", "Geekvape", "IGET", "Alibarbar", "HQD", "VooPoo", "Uwell",
-  "Vaporesso", "DynaVap", "Nasty Juice", "Airmez", "SMOK", "Lost Vape",
-  "Muha Meds", "Kado", "Waka", "Tyson", "Puffmi", "Elf Bar", "Lost Mary",
-  "INGOT", "Pulse", "Cloud Nurdz", "Simrell", "Sticky Brick", "Storz & Bickel",
+  // newly sourced ranges
+  "IGET Bar Pro", "IGET Moon", "IGET Bar Plus", "IGET Legend", "IGET Star",
+  "Elf Bar Raya", "Elf Bar Duke", "Elf Bar MoonNight", "Elf Bar BC",
+  "Alibarbar Ingot", "Alibarbar Pandora", "Alibarbar Upload", "Alibarbar Pro",
+  // broader brands
+  "IGET", "Elf Bar", "Alibarbar", "Geek Bar", "Geekvape", "HQD", "VooPoo",
+  "Uwell", "Vaporesso", "DynaVap", "Nasty Juice", "Airmez", "SMOK",
+  "Lost Vape", "Kado", "Waka", "Tyson", "Puffmi", "Lost Mary",
+  "Pulse", "Cloud Nurdz", "Simrell", "Storz & Bickel",
 ];
 
 const FLAVOUR_LIST = [

@@ -44,11 +44,6 @@ export default function ProductCard({ product }: { product: Product }) {
             {discount ? `-${discount}%` : "Sale"}
           </span>
         )}
-        {!product.in_stock && (
-          <span className="absolute left-2 top-2 rounded-full bg-black/75 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-            Sold out
-          </span>
-        )}
       </Link>
       <div className="flex flex-col gap-1 p-3.5">
         <Link
@@ -87,7 +82,6 @@ export default function ProductCard({ product }: { product: Product }) {
               Options
             </Link>
           ) : (
-            product.in_stock &&
             (product.price ?? 0) > 0 && (
               <AddToCartButton
                 product={{
