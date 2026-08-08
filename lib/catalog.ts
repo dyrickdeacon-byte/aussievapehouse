@@ -846,42 +846,63 @@ const HIGH_DEMAND_LINES: { name: string; match: RegExp }[] = [
   { name: "Alibarbar", match: /alibarbar/i },
 ];
 
+// Popular brands for the homepage rail, most-wanted first. Round-robin runs
+// across BRANDS (not product lines) — the earlier version cycled lines, and
+// since seven of them were IGET variants the rail filled up with IGET.
+const POPULAR_BRANDS: { name: string; match: RegExp }[] = [
+  { name: "IGET", match: /\biget\b/i },
+  { name: "Geek Bar", match: /geek\s*bar/i },
+  { name: "Alibarbar", match: /alibarbar/i },
+  { name: "Elf Bar", match: /elf\s*bar/i },
+  { name: "HQD", match: /\bhqd\b/i },
+  { name: "Airmez", match: /airmez/i },
+  { name: "SMOK", match: /\bsmok\b/i },
+  { name: "Uwell", match: /uwell/i },
+  { name: "Vaporesso", match: /vaporesso/i },
+  { name: "VooPoo", match: /voopoo/i },
+];
+
+const HERO_MIN_WIDTH = 700;
+
 export async function getHighDemand(limit = 10): Promise<Product[]> {
   const pool = (await getProducts()).filter(
     (p) =>
       sellable(p) &&
-      primaryImage(p) &&
-      !/bundle|\(\d+\s*pcs\)|bulk/i.test(p.name)
+      // sharp imagery only — this rail is the shop window
+      (primaryImage(p)?.width ?? 0) >= HERO_MIN_WIDTH &&
+      // headline devices only: no coils, pods, tanks, spares or multi-packs
+      p.group === "disposables" &&
+      !/bundle|\(\d+\s*pcs\)|bulk|replacement|coils?\b|\bpods?\b|cartridge|\btank\b/i.test(p.name)
   );
   const score = (p: Product) =>
-    (primaryImage(p)?.width ?? 0) + (p.on_sale ? 300 : 0);
+    (primaryImage(p)?.width ?? 0) + (p.on_sale ? 300 : 0) + (p.isCustom ? 200 : 0);
+
+  const byBrand = new Map<string, Product[]>();
+  for (const brand of POPULAR_BRANDS) {
+    const items = pool
+      .filter((p) => brand.match.test(p.name))
+      .sort((a, b) => score(b) - score(a));
+    if (items.length) byBrand.set(brand.name, items);
+  }
+
+  // One per brand first, then a second pass — so the rail leads with breadth
   const picks: Product[] = [];
   const used = new Set<number>();
-  for (const line of HIGH_DEMAND_LINES) {
-    const best = pool
-      .filter((p) => !used.has(p.id) && line.match.test(p.name))
-      .sort((a, b) => score(b) - score(a))[0];
-    if (best) {
-      used.add(best.id);
-      picks.push(best);
-    }
-  }
-  // Fill remaining slots round-robin across the lines so one brand
-  // doesn't monopolise the rail
-  let added = true;
-  while (picks.length < limit && added) {
-    added = false;
-    for (const line of HIGH_DEMAND_LINES) {
+  const cursor = new Map<string, number>();
+  for (let round = 0; round < limit && picks.length < limit; round++) {
+    let addedThisRound = false;
+    for (const [name, items] of byBrand) {
       if (picks.length >= limit) break;
-      const next = pool
-        .filter((p) => !used.has(p.id) && line.match.test(p.name))
-        .sort((a, b) => score(b) - score(a))[0];
-      if (next) {
-        used.add(next.id);
-        picks.push(next);
-        added = true;
+      let i = cursor.get(name) ?? 0;
+      while (i < items.length && used.has(items[i].id)) i++;
+      cursor.set(name, i + 1);
+      if (i < items.length) {
+        used.add(items[i].id);
+        picks.push(items[i]);
+        addedThisRound = true;
       }
     }
+    if (!addedThisRound) break;
   }
   return picks.slice(0, limit);
 }
