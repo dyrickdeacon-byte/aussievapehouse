@@ -4,6 +4,9 @@ import { logoutAction } from "@/app/admin/actions";
 
 export const metadata = { title: "Admin" };
 
+// Admin is session-gated and reads live data — never prerender it at build
+export const dynamic = "force-dynamic";
+
 // Each protected page calls requireAdmin() itself (redirects to login);
 // this layout only decides whether to show the nav.
 export default async function AdminLayout({

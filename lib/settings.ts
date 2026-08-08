@@ -67,7 +67,15 @@ const DEFAULTS: SiteSettings = {
 // Upstash Redis on Vercel). Read fresh on every call so admin saves apply
 // without a restart.
 export async function getSettings(): Promise<SiteSettings> {
-  let raw = await kvGet<Partial<SiteSettings>>("site-settings");
+  let raw: Partial<SiteSettings> | null = null;
+  // Reads must never take the site down (or fail the build): a broken
+  // key / missing table falls back to the committed defaults file.
+  // Writes (saveSettings, orders) still fail loudly.
+  try {
+    raw = await kvGet<Partial<SiteSettings>>("site-settings");
+  } catch (e) {
+    console.error("[settings] storage read failed, using fallback:", e);
+  }
   // First run on a fresh database: fall back to the committed defaults
   // file (ships in the repo) so livechat/socials/WhatsApp survive the
   // initial deploy; the first admin save then persists to the database.
