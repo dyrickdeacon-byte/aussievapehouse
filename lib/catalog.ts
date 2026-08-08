@@ -391,9 +391,30 @@ function customToProduct(c: CustomProduct): Product {
   };
 }
 
-// Merged catalog: owner-added products first (newest first), then the
-// scraped catalog. Products with no real photo are excluded entirely
-// (owner rule) — 144 supplier listings the supplier never photographed.
+// Products imported by scripts/source-products.mjs (committed file, so they
+// ship with the deploy). Same shape as admin-created ones.
+let sourcedCache: Product[] | null = null;
+function getSourcedProducts(): Product[] {
+  if (!sourcedCache) {
+    try {
+      const raw = JSON.parse(
+        readFileSync(path.join(process.cwd(), "catalog", "sourced-products.json"), "utf8")
+      ) as (CustomProduct & { replacesBaseName: string | null })[];
+      sourcedCache = raw.map((c, i) =>
+        customToProduct({ ...c, id: 800_000 + i, updatedAt: c.createdAt })
+      );
+    } catch {
+      sourcedCache = [];
+    }
+  }
+  return sourcedCache;
+}
+
+// Merged catalog, highest precedence first:
+//   1. admin-created products   2. sourced imports   3. base scraped catalog
+// A sourced/admin product replaces a base entry with the same name or slug,
+// so the better photography wins. Products with no real photo are excluded
+// entirely (owner rule).
 export async function getProducts(): Promise<Product[]> {
   let custom: Product[] = [];
   try {
@@ -401,11 +422,25 @@ export async function getProducts(): Promise<Product[]> {
   } catch (e) {
     console.error("[catalog] custom products unavailable:", e);
   }
-  const customSlugs = new Set(custom.map((p) => p.slug));
-  const base = getBaseProducts().filter(
-    (p) => !!primaryImage(p) && !customSlugs.has(p.slug)
+  const sourced = getSourcedProducts();
+
+  const takenSlugs = new Set(custom.map((p) => p.slug));
+  const takenNames = new Set(custom.map((p) => p.name.trim().toLowerCase()));
+  const sourcedKept = sourced.filter(
+    (p) => !takenSlugs.has(p.slug) && !takenNames.has(p.name.trim().toLowerCase())
   );
-  return [...custom, ...base];
+  for (const p of sourcedKept) {
+    takenSlugs.add(p.slug);
+    takenNames.add(p.name.trim().toLowerCase());
+  }
+
+  const base = getBaseProducts().filter(
+    (p) =>
+      !!primaryImage(p) &&
+      !takenSlugs.has(p.slug) &&
+      !takenNames.has(p.name.trim().toLowerCase())
+  );
+  return [...custom, ...sourcedKept, ...base];
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
