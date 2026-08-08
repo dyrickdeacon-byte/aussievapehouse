@@ -564,7 +564,10 @@ export function getHeroProducts(
   limit = 9
 ): { product: Product; eyebrow: string }[] {
   const excluded = new Set(excludeIds);
-  // Hero shots must be high-res (≥700px measured) — no fuzzy thumbnails
+  // Hero shots must be high-res (≥700px measured) — no fuzzy thumbnails.
+  // Only two high-demand lines have such photos, so: those first (max 2
+  // slides each), then other sharp-shot products for variety — never the
+  // same two brands ping-ponging all nine slides.
   const pool = getProducts().filter(
     (p) =>
       sellable(p) &&
@@ -574,28 +577,57 @@ export function getHeroProducts(
   );
   const rank = (p: Product) =>
     (primaryImage(p)?.width ?? 0) + (p.price ?? p.price_min ?? 0);
-  const slides: { product: Product; eyebrow: string }[] = [];
+  // Brand word — caps any single brand at 2 hero slides
+  const familyOf = (p: Product) => p.name.toLowerCase().split(/\s+/)[0];
+
+  const picks: Product[] = [];
   const used = new Set<number>();
-  // Round-robin across the high-demand lines for variety
-  let added = true;
-  while (slides.length < limit && added) {
-    added = false;
+  const famCount = new Map<string, number>();
+  const push = (p: Product) => {
+    used.add(p.id);
+    famCount.set(familyOf(p), (famCount.get(familyOf(p)) ?? 0) + 1);
+    picks.push(p);
+  };
+
+  // Phase 1: high-demand lines, up to 2 slides per line
+  for (let round = 0; round < 2; round++) {
     for (const line of HIGH_DEMAND_LINES) {
-      if (slides.length >= limit) break;
+      if (picks.length >= limit) break;
       const next = pool
         .filter((p) => !used.has(p.id) && line.match.test(p.name))
         .sort((a, b) => rank(b) - rank(a))[0];
-      if (next) {
-        used.add(next.id);
-        slides.push({
-          product: next,
-          eyebrow: HERO_EYEBROWS[slides.length % HERO_EYEBROWS.length],
-        });
-        added = true;
-      }
+      if (next) push(next);
     }
   }
-  return slides;
+
+  // Phase 2: fill with other quality products — mainstream vape gear
+  // (disposables, kits, pods, e-liquids), keeping niche dry-herb/artisan
+  // hardware off the marquee; max 2 per product family
+  const GROUP_WEIGHT: Partial<Record<GroupKey, number>> = {
+    disposables: 3,
+    kits: 2,
+    pods: 2,
+    "e-liquids": 2,
+  };
+  const NICHE =
+    /dynavap|vapcap|flame ?powered|stem\b|brick|wynd|unidyn|induction|dry ?herb|bong|dab|puffco|proxy|concentrate|rig\b/i;
+  const rest = pool
+    .filter((p) => !used.has(p.id) && !NICHE.test(p.name))
+    .sort(
+      (a, b) =>
+        (GROUP_WEIGHT[b.group] ?? 0) - (GROUP_WEIGHT[a.group] ?? 0) ||
+        rank(b) - rank(a)
+    );
+  for (const p of rest) {
+    if (picks.length >= limit) break;
+    if ((famCount.get(familyOf(p)) ?? 0) >= 2) continue;
+    push(p);
+  }
+
+  return picks.map((product, i) => ({
+    product,
+    eyebrow: HERO_EYEBROWS[i % HERO_EYEBROWS.length],
+  }));
 }
 
 export function getCategoryTiles(): {

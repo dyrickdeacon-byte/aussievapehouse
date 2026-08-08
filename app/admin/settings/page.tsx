@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/admin";
 import { getSettings, PAYMENT_METHOD_LABELS, type PaymentMethodKey } from "@/lib/settings";
-import { saveSettingsAction } from "@/app/admin/actions";
+import { changePasswordAction, saveSettingsAction } from "@/app/admin/actions";
 
 const input =
   "w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm outline-none transition placeholder:text-muted/60 focus:border-accent";
@@ -15,13 +15,19 @@ const METHOD_HINTS: Record<PaymentMethodKey, string> = {
   other: "e.g. USDT (TRC20): TXabc… — or gift cards, cash on pickup, etc.",
 };
 
+const PW_ERRORS: Record<string, string> = {
+  wrong: "Current password is incorrect.",
+  short: "New password must be at least 8 characters.",
+  match: "New passwords don't match.",
+};
+
 export default async function AdminSettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; pwsaved?: string; pwerr?: string }>;
 }) {
   await requireAdmin();
-  const { saved } = await searchParams;
+  const { saved, pwsaved, pwerr } = await searchParams;
   const s = getSettings();
 
   return (
@@ -149,6 +155,57 @@ export default async function AdminSettingsPage({
           Save settings
         </button>
       </form>
+
+      {/* Separate form — password changes shouldn't ride along with settings */}
+      <section className="mt-10 rounded-xl border border-line bg-surface p-5">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-muted">
+          Admin password
+        </h2>
+        {pwsaved && (
+          <p className="mt-3 inline-block rounded-lg border border-eucalypt/40 bg-eucalypt/10 px-4 py-2 text-sm font-semibold text-eucalypt">
+            Password changed — use it next time you sign in.
+          </p>
+        )}
+        {pwerr && (
+          <p className="mt-3 inline-block rounded-lg border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent">
+            {PW_ERRORS[pwerr] ?? "Couldn't change the password."}
+          </p>
+        )}
+        <form action={changePasswordAction} className="mt-4 grid gap-3 sm:grid-cols-3">
+          <input
+            type="password"
+            name="currentPassword"
+            required
+            placeholder="Current password"
+            className={input}
+          />
+          <input
+            type="password"
+            name="newPassword"
+            required
+            minLength={8}
+            placeholder="New password (min 8 chars)"
+            className={input}
+          />
+          <input
+            type="password"
+            name="confirmPassword"
+            required
+            placeholder="Repeat new password"
+            className={input}
+          />
+          <div className="sm:col-span-3">
+            <button className="rounded-lg bg-earth px-6 py-2.5 text-sm font-bold text-[#f0e2c4] transition hover:opacity-90">
+              Change password
+            </button>
+            <p className="mt-2 text-xs text-muted">
+              Changing the password signs out every other admin session.
+              Recovery: delete <code>data/admin-auth.json</code> on the server
+              to fall back to the ADMIN_PASSWORD from .env.local.
+            </p>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }

@@ -54,3 +54,4 @@ data/orders.json
 data/subscribers.json
 data/email-log.jsonl
 !.env.example
+data/admin-auth.json
