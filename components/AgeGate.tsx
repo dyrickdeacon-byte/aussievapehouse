@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import LogoMark from "@/components/Logo";
 
 const STORAGE_KEY = "avh_age_ok";
 
@@ -18,7 +19,10 @@ export default function AgeGate() {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
       <div className="w-full max-w-md rounded-2xl border border-line-2 bg-surface p-8 text-center shadow-2xl">
-        <p className="font-display text-3xl text-accent">AUSSIE VAPE HOUSE</p>
+        <LogoMark size={88} className="mx-auto" />
+        <p className="font-display mt-3 text-3xl">
+          AUSSIE <span className="text-accent">VAPE</span> HOUSE
+        </p>
         <h1 className="mt-6 text-xl font-semibold">Are you 18 or over?</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
           This site sells age-restricted products containing nicotine.

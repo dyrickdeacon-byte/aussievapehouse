@@ -17,7 +17,9 @@
    "paypal": "",
    "applepay": "",
    "googlepay": "",
-   "card": ""
-  }
+   "card": "",
+   "other": "USDT (TRC20): TXsampleWalletAddress123"
+  },
+  "otherLabel": "Crypto (USDT)"
  }
 }

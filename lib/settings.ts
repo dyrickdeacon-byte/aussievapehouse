@@ -7,7 +7,8 @@ export type PaymentMethodKey =
   | "paypal"
   | "applepay"
   | "googlepay"
-  | "card";
+  | "card"
+  | "other";
 
 export type SiteSettings = {
   whatsapp: string;
@@ -29,6 +30,8 @@ export type SiteSettings = {
     mode: "manual" | "direct";
     /** Owner-entered payment details per method; empty = hidden in direct mode */
     methods: Record<PaymentMethodKey, string>;
+    /** Display name for the owner's custom "other" method (e.g. "Crypto — USDT") */
+    otherLabel: string;
   };
 };
 
@@ -39,6 +42,7 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethodKey, string> = {
   applepay: "Apple Pay",
   googlepay: "Google Pay",
   card: "Card",
+  other: "Other",
 };
 
 const DEFAULTS: SiteSettings = {
@@ -54,7 +58,9 @@ const DEFAULTS: SiteSettings = {
       applepay: "",
       googlepay: "",
       card: "",
+      other: "",
     },
+    otherLabel: "",
   },
 };
 
@@ -72,6 +78,7 @@ export function getSettings(): SiteSettings {
       payments: {
         mode: raw.payments?.mode === "direct" ? "direct" : "manual",
         methods: { ...DEFAULTS.payments.methods, ...raw.payments?.methods },
+        otherLabel: raw.payments?.otherLabel ?? "",
       },
     };
   } catch {

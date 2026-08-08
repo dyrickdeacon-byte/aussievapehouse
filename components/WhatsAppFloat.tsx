@@ -12,7 +12,7 @@ export default function WhatsAppFloat({ number }: { number: string }) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat on WhatsApp"
-      className="wa-float fixed bottom-[200px] right-5 z-50 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#25D366] transition hover:scale-105"
+      className="wa-float fixed bottom-[148px] right-5 z-50 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#25D366] transition hover:scale-105"
     >
       <WhatsAppIcon size={30} />
     </a>

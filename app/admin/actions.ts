@@ -46,11 +46,12 @@ export async function saveSettingsAction(formData: FormData) {
     payments: {
       mode: str("paymentMode") === "direct" ? "direct" : "manual",
       methods: (
-        ["bank", "payid", "paypal", "applepay", "googlepay", "card"] as PaymentMethodKey[]
+        ["bank", "payid", "paypal", "applepay", "googlepay", "card", "other"] as PaymentMethodKey[]
       ).reduce(
         (acc, key) => ({ ...acc, [key]: str(`method_${key}`) }),
         { ...current.payments.methods }
       ),
+      otherLabel: str("otherLabel"),
     },
   });
   revalidatePath("/", "layout");

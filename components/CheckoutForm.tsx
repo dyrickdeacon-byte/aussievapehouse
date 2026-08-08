@@ -23,9 +23,10 @@ const AU_STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
 type Props = {
   mode: "manual" | "direct";
   methodDetails: Record<PaymentMethodKey, string>;
+  otherLabel?: string;
 };
 
-export default function CheckoutForm({ mode, methodDetails }: Props) {
+export default function CheckoutForm({ mode, methodDetails, otherLabel }: Props) {
   const { items, subtotal, clear } = useCart();
   const [method, setMethod] = useState("bank");
   const [state, setState] = useState<"idle" | "busy" | "error">("idle");
@@ -40,14 +41,18 @@ export default function CheckoutForm({ mode, methodDetails }: Props) {
   const discount = discountFor(discountCode, subtotal);
   const total = Math.round((subtotal - discount) * 100) / 100;
 
-  // Direct mode only offers methods the owner has configured
+  // Direct mode only offers methods the owner has configured; the owner's
+  // custom "other" method shows under its admin-set name
   const available = useMemo(() => {
     if (mode === "manual") return METHODS;
     const configured = METHODS.filter(
       (m) => m.key !== "other" && methodDetails[m.key as PaymentMethodKey]?.trim()
     );
+    if (methodDetails.other?.trim()) {
+      configured.push({ key: "other", label: otherLabel?.trim() || "Other" });
+    }
     return configured.length ? configured : METHODS;
-  }, [mode, methodDetails]);
+  }, [mode, methodDetails, otherLabel]);
 
   const activeMethod = available.some((m) => m.key === method)
     ? method
@@ -71,7 +76,10 @@ export default function CheckoutForm({ mode, methodDetails }: Props) {
       },
       items: items.map((i) => ({ id: i.id, qty: i.qty })),
       paymentMethod: activeMethod,
-      paymentOther: fd.get("paymentOther"),
+      paymentOther:
+        mode === "direct" && activeMethod === "other"
+          ? otherLabel || "Custom"
+          : fd.get("paymentOther"),
       paymentReference: fd.get("paymentReference"),
       discountCode,
     };
@@ -201,7 +209,7 @@ export default function CheckoutForm({ mode, methodDetails }: Props) {
               ))}
             </div>
 
-            {activeMethod === "other" && (
+            {mode === "manual" && activeMethod === "other" && (
               <input
                 name="paymentOther"
                 placeholder="Tell us your preferred payment method"
@@ -212,7 +220,7 @@ export default function CheckoutForm({ mode, methodDetails }: Props) {
             {mode === "direct" ? (
               <div className="mt-4 rounded-lg border border-ochre/40 bg-ochre/10 p-4">
                 <p className="text-xs font-bold uppercase tracking-wider text-ochre">
-                  Pay now — {METHODS.find((m) => m.key === activeMethod)?.label}
+                  Pay now — {available.find((m) => m.key === activeMethod)?.label}
                 </p>
                 <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">
                   {methodDetails[activeMethod as PaymentMethodKey] ||

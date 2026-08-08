@@ -9,6 +9,7 @@ export default function CheckoutPage() {
     <CheckoutForm
       mode={settings.payments.mode}
       methodDetails={settings.payments.methods}
+      otherLabel={settings.payments.otherLabel}
     />
   );
 }

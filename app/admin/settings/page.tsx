@@ -12,6 +12,7 @@ const METHOD_HINTS: Record<PaymentMethodKey, string> = {
   applepay: "e.g. Apple Pay to 0400 000 000",
   googlepay: "e.g. Google Pay to 0400 000 000",
   card: "e.g. payment link for card payments",
+  other: "e.g. USDT (TRC20): TXabc… — or gift cards, cash on pickup, etc.",
 };
 
 export default async function AdminSettingsPage({
@@ -78,7 +79,9 @@ export default async function AdminSettingsPage({
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {(Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethodKey[]).map((key) => (
               <label key={key} className="text-sm">
-                <span className="font-semibold">{PAYMENT_METHOD_LABELS[key]}</span>
+                <span className="font-semibold">
+                  {key === "other" ? "Other (custom method)" : PAYMENT_METHOD_LABELS[key]}
+                </span>
                 <textarea
                   name={`method_${key}`}
                   defaultValue={s.payments.methods[key]}
@@ -88,6 +91,16 @@ export default async function AdminSettingsPage({
                 />
               </label>
             ))}
+            <label className="text-sm">
+              <span className="font-semibold">&ldquo;Other&rdquo; method name</span>{" "}
+              <span className="text-muted">(shown as the button at checkout)</span>
+              <input
+                name="otherLabel"
+                defaultValue={s.payments.otherLabel}
+                placeholder="e.g. Crypto (USDT)"
+                className={`${input} mt-1.5`}
+              />
+            </label>
           </div>
         </section>
 

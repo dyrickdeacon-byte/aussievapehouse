@@ -564,10 +564,11 @@ export function getHeroProducts(
   limit = 9
 ): { product: Product; eyebrow: string }[] {
   const excluded = new Set(excludeIds);
+  // Hero shots must be high-res (≥700px measured) — no fuzzy thumbnails
   const pool = getProducts().filter(
     (p) =>
       sellable(p) &&
-      primaryImage(p) &&
+      (primaryImage(p)?.width ?? 0) >= 700 &&
       !excluded.has(p.id) &&
       !/bundle|\(\d+\s*pcs\)|bulk buy/i.test(p.name)
   );

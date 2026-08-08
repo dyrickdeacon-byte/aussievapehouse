@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCart } from "@/lib/cart";
+import LogoMark from "@/components/Logo";
 
 const NAV = [
   { href: "/shop", label: "Shop All" },
@@ -52,12 +53,15 @@ export default function Header() {
       {/* Main bar */}
       <div className="border-b border-line bg-background/95 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-[1380px] items-center gap-4 px-4 lg:gap-6">
-          <Link href="/" className="flex shrink-0 flex-col leading-none">
-            <span className="font-display text-[22px] text-accent">
-              AUSSIE VAPE HOUSE
-            </span>
-            <span className="text-[8px] font-semibold uppercase tracking-[0.35em] text-muted">
-              aussievapehouse.com
+          <Link href="/" className="flex shrink-0 items-center gap-2.5">
+            <LogoMark size={42} className="shrink-0" />
+            <span className="flex flex-col leading-none">
+              <span className="font-display text-[22px] text-foreground">
+                AUSSIE <span className="text-accent">VAPE</span> HOUSE
+              </span>
+              <span className="text-[8px] font-semibold uppercase tracking-[0.35em] text-muted">
+                aussievapehouse.com
+              </span>
             </span>
           </Link>
 
