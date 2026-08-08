@@ -1,10 +1,14 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import {
+  sendMail,
+  subscribeCustomerHtml,
+  subscribeOwnerHtml,
+} from "@/lib/email";
 
-// Captures newsletter signups to data/subscribers.json for now.
-// The email automation pass (welcome email with discount code + owner
-// notification) will plug in here once an email provider is chosen.
+// Captures newsletter signups to data/subscribers.json and sends the
+// welcome email (customer) + notification (owner).
 export async function POST(req: Request) {
   let email: unknown;
   try {
@@ -25,9 +29,20 @@ export async function POST(req: Request) {
   } catch {
     // first subscriber
   }
-  if (!list.some((s) => s.email.toLowerCase() === email.toLowerCase())) {
+  const isNew = !list.some((s) => s.email.toLowerCase() === email.toLowerCase());
+  if (isNew) {
     list.push({ email, at: new Date().toISOString() });
     await writeFile(file, JSON.stringify(list, null, 1));
+    void sendMail({
+      to: email,
+      subject: "Your 10% off Aussie Vape House 🎉",
+      html: subscribeCustomerHtml(),
+    });
+    void sendMail({
+      to: process.env.MAIL_OWNER || "info@aussievapehouse.com",
+      subject: `New subscriber: ${email}`,
+      html: subscribeOwnerHtml(email),
+    });
   }
   return NextResponse.json({ ok: true });
 }

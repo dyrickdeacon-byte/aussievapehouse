@@ -48,3 +48,9 @@ catalog/failures.json
 meridiankush_cloudflare/
 catalog/audit-result.json
 catalog/crawl-failures.json
+
+# runtime store data (orders/subscribers/email log)
+data/orders.json
+data/subscribers.json
+data/email-log.jsonl
+!.env.example

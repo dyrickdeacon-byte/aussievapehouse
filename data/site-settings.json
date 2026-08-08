@@ -1,12 +1,23 @@
 {
-  "_note": "Edited by the admin panel (coming). Empty string = feature hidden. Values below are placeholders so the design can be previewed — clear them before launch.",
-  "whatsapp": "61400000000",
-  "livechatEmbed": "",
-  "socials": {
-    "facebook": "https://facebook.com/aussievapehouse",
-    "instagram": "https://instagram.com/aussievapehouse",
-    "tiktok": "https://tiktok.com/@aussievapehouse",
-    "x": "",
-    "youtube": ""
+ "_note": "Managed by the /admin dashboard. Empty string = feature hidden.",
+ "whatsapp": "61400000000",
+ "livechatEmbed": "<!--Start of Tawk.to Script--> <script type=\"text/javascript\"> var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date(); (function(){ var s1=document.createElement(\"script\"),s0=document.getElementsByTagName(\"script\")[0]; s1.async=true; s1.src='https://embed.tawk.to/6a76f3248775771d44218802/1jvgabn93'; s1.charset='UTF-8'; s1.setAttribute('crossorigin','*'); s0.parentNode.insertBefore(s1,s0); })(); </script> <!--End of Tawk.to Script-->",
+ "socials": {
+  "facebook": "https://facebook.com/aussievapehouse",
+  "instagram": "https://instagram.com/aussievapehouse",
+  "tiktok": "https://tiktok.com/@aussievapehouse",
+  "x": "",
+  "youtube": ""
+ },
+ "payments": {
+  "mode": "manual",
+  "methods": {
+   "bank": "Name: Aussie Vape House\r\nBSB: 062-000\r\nAccount: 1234 5678",
+   "payid": "PayID: pay@aussievapehouse.com",
+   "paypal": "",
+   "applepay": "",
+   "googlepay": "",
+   "card": ""
   }
+ }
 }

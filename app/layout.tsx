@@ -7,6 +7,7 @@ import AgeGate from "@/components/AgeGate";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import LiveChat from "@/components/LiveChat";
 
 // Self-hosted (app/fonts) — the dev machine's node fetch can't reliably
 // reach fonts.gstatic.com, and self-hosting is better for prod anyway.
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <main className="flex-1">{children}</main>
           <Footer />
           <WhatsAppFloat number={settings.whatsapp} />
+          <LiveChat embed={settings.livechatEmbed} />
         </CartProvider>
       </body>
     </html>
