@@ -3,6 +3,7 @@ import { addOrder, newOrderId, type Order, type OrderItem } from "@/lib/orders";
 import { getSettings } from "@/lib/settings";
 import { orderCustomerHtml, orderOwnerHtml, sendMail } from "@/lib/email";
 import { getProducts } from "@/lib/catalog";
+import { discountFor, WELCOME_CODE } from "@/lib/discount";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -50,6 +51,8 @@ export async function POST(req: Request) {
 
   const settings = getSettings();
   const method = String(body.paymentMethod ?? "bank");
+  const subtotal = items.reduce((n, i) => n + i.price * i.qty, 0);
+  const discount = discountFor(String(body.discountCode ?? ""), subtotal);
   const order: Order = {
     id: newOrderId(),
     createdAt: new Date().toISOString(),
@@ -71,7 +74,10 @@ export async function POST(req: Request) {
       notes: c.notes ? String(c.notes).slice(0, 500) : undefined,
     },
     items,
-    subtotal: items.reduce((n, i) => n + i.price * i.qty, 0),
+    subtotal,
+    discountCode: discount > 0 ? WELCOME_CODE : undefined,
+    discount: discount > 0 ? discount : undefined,
+    total: Math.round((subtotal - discount) * 100) / 100,
   };
 
   addOrder(order);
@@ -84,7 +90,7 @@ export async function POST(req: Request) {
   });
   void sendMail({
     to: process.env.MAIL_OWNER || "info@aussievapehouse.com",
-    subject: `New order ${order.id} — AU$${order.subtotal.toFixed(2)} (${order.paymentMode})`,
+    subject: `New order ${order.id} — AU$${(order.total ?? order.subtotal).toFixed(2)} (${order.paymentMode})`,
     html: orderOwnerHtml(order),
   });
 

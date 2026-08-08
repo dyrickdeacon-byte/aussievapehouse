@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import LiveChat from "@/components/LiveChat";
+import OfferPopup from "@/components/OfferPopup";
 
 // Self-hosted (app/fonts) — the dev machine's node fetch can't reliably
 // reach fonts.gstatic.com, and self-hosting is better for prod anyway.
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Footer />
           <WhatsAppFloat number={settings.whatsapp} />
           <LiveChat embed={settings.livechatEmbed} />
+          <OfferPopup />
         </CartProvider>
       </body>
     </html>

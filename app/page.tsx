@@ -143,11 +143,15 @@ function SectionHead({
 }
 
 export default function HomePage() {
-  const heroes = getHeroProducts();
   const tiles = getCategoryTiles();
   const bestSellers = getBestSellers(8);
   const brands = getBrandCounts();
   const highDemand = getHighDemand(10);
+  // Hero rotates high-demand products NOT already carded on the homepage
+  const heroes = getHeroProducts(
+    [...highDemand, ...bestSellers].map((p) => p.id),
+    9
+  );
 
   return (
     <div>

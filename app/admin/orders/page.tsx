@@ -42,7 +42,12 @@ export default async function AdminOrdersPage() {
                   {new Date(o.createdAt).toLocaleString("en-AU")}
                 </span>
                 <span className="ml-auto text-sm font-bold">
-                  AU${o.subtotal.toFixed(2)}
+                  AU${(o.total ?? o.subtotal).toFixed(2)}
+                  {o.discount ? (
+                    <span className="ml-1.5 text-[11px] font-semibold text-eucalypt">
+                      ({o.discountCode})
+                    </span>
+                  ) : null}
                 </span>
               </summary>
               <div className="border-t border-line px-5 py-4 text-sm">

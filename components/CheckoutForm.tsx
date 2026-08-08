@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/format";
 import Medallion from "@/components/Medallion";
 import type { PaymentMethodKey } from "@/lib/settings";
+import { DISCOUNT_STORAGE_KEY, discountFor } from "@/lib/discount";
 
 const METHODS: { key: string; label: string }[] = [
   { key: "bank", label: "Bank Transfer" },
@@ -30,6 +31,14 @@ export default function CheckoutForm({ mode, methodDetails }: Props) {
   const [state, setState] = useState<"idle" | "busy" | "error">("idle");
   const [placed, setPlaced] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [discountCode, setDiscountCode] = useState<string | null>(null);
+
+  // The welcome code from the popup / newsletter auto-applies here
+  useEffect(() => {
+    setDiscountCode(localStorage.getItem(DISCOUNT_STORAGE_KEY));
+  }, []);
+  const discount = discountFor(discountCode, subtotal);
+  const total = Math.round((subtotal - discount) * 100) / 100;
 
   // Direct mode only offers methods the owner has configured
   const available = useMemo(() => {
@@ -64,6 +73,7 @@ export default function CheckoutForm({ mode, methodDetails }: Props) {
       paymentMethod: activeMethod,
       paymentOther: fd.get("paymentOther"),
       paymentReference: fd.get("paymentReference"),
+      discountCode,
     };
     try {
       const res = await fetch("/api/orders", {
@@ -241,9 +251,21 @@ export default function CheckoutForm({ mode, methodDetails }: Props) {
               </li>
             ))}
           </ul>
-          <div className="mt-4 flex justify-between border-t border-line pt-3 text-base font-bold">
-            <span>Subtotal</span>
-            <span>{formatPrice(subtotal)}</span>
+          <div className="mt-4 space-y-1.5 border-t border-line pt-3">
+            <div className="flex justify-between text-sm">
+              <span>Subtotal</span>
+              <span>{formatPrice(subtotal)}</span>
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-sm font-semibold text-eucalypt">
+                <span>10% off ({discountCode?.toUpperCase()}) 🎉</span>
+                <span>−{formatPrice(discount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-base font-bold">
+              <span>Total</span>
+              <span>{formatPrice(total)}</span>
+            </div>
           </div>
           <p className="mt-1 text-xs text-muted">
             Shipping confirmed with your order — free express over AU$100.

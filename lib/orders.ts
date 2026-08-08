@@ -36,6 +36,10 @@ export type Order = {
   };
   items: OrderItem[];
   subtotal: number;
+  discountCode?: string;
+  discount?: number;
+  /** subtotal minus discount; older orders may lack it — fall back to subtotal */
+  total?: number;
 };
 
 const FILE = () => path.join(process.cwd(), "data", "orders.json");

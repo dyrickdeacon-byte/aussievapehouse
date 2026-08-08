@@ -94,10 +94,17 @@ function itemsTable(order: Order): string {
       </tr>`
     )
     .join("");
+  const discountRow = order.discount
+    ? `<tr><td colspan="2" style="padding:6px 10px;font-size:13px;color:#2f6d5f;font-weight:700;">10% off (${order.discountCode})</td>
+       <td style="padding:6px 10px;font-size:13px;color:#2f6d5f;font-weight:700;text-align:right;">−${aud(order.discount)}</td></tr>`
+    : "";
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e0d3b6;border-radius:8px;overflow:hidden;">
     ${rows}
-    <tr><td colspan="2" style="padding:10px;font-weight:800;font-size:14px;">Subtotal</td>
-    <td style="padding:10px;font-weight:800;font-size:14px;text-align:right;">${aud(order.subtotal)}</td></tr>
+    <tr><td colspan="2" style="padding:8px 10px;font-size:13px;">Subtotal</td>
+    <td style="padding:8px 10px;font-size:13px;text-align:right;">${aud(order.subtotal)}</td></tr>
+    ${discountRow}
+    <tr><td colspan="2" style="padding:10px;font-weight:800;font-size:14px;">Total</td>
+    <td style="padding:10px;font-weight:800;font-size:14px;text-align:right;">${aud(order.total ?? order.subtotal)}</td></tr>
   </table>`;
 }
 

@@ -545,36 +545,53 @@ const wellShot = (p: Product) => {
   return sellable(p) && real.length >= 3 && (real[0]?.width ?? 0) >= 700;
 };
 
-const HERO_EYEBROWS = ["Top Shelf", "Premium Pick", "Staff Favourite", "Trending Now"];
+const HERO_EYEBROWS = [
+  "Most Wanted",
+  "Top Shelf",
+  "Trending Now",
+  "Staff Favourite",
+  "Big Puffs",
+  "Fan Favourite",
+  "Hot Right Now",
+  "Premium Pick",
+  "Crowd Pleaser",
+];
 
-// Owner rule: the hero rotates core range only — no hardware/accessories
-const HERO_GROUPS: GroupKey[] = ["disposables", "e-liquids", "pods"];
-
-export function getHeroProducts(): { product: Product; eyebrow: string }[] {
-  // Bundles / multi-packs make weak hero shots — single products only.
-  // Best of each hero group first (priciest, sharpest photos), then fill
-  // remaining slots with the next-best from any hero group.
-  const pool = getProducts()
-    .filter(
-      (p) =>
-        wellShot(p) &&
-        HERO_GROUPS.includes(p.group) &&
-        !/bundle|\(\d+\s*pcs\)|bulk buy/i.test(p.name)
-    )
-    .sort(
-      (a, b) =>
-        (b.price ?? b.price_min ?? 0) - (a.price ?? a.price_min ?? 0) ||
-        (b.images[0]?.width ?? 0) - (a.images[0]?.width ?? 0)
-    );
+// Owner rule: the hero rotates the client's high-demand lines — products
+// NOT already shown elsewhere on the homepage (pass those ids to exclude).
+export function getHeroProducts(
+  excludeIds: number[] = [],
+  limit = 9
+): { product: Product; eyebrow: string }[] {
+  const excluded = new Set(excludeIds);
+  const pool = getProducts().filter(
+    (p) =>
+      sellable(p) &&
+      primaryImage(p) &&
+      !excluded.has(p.id) &&
+      !/bundle|\(\d+\s*pcs\)|bulk buy/i.test(p.name)
+  );
+  const rank = (p: Product) =>
+    (primaryImage(p)?.width ?? 0) + (p.price ?? p.price_min ?? 0);
   const slides: { product: Product; eyebrow: string }[] = [];
-  for (const g of HERO_GROUPS) {
-    const p = pool.find((x) => x.group === g);
-    if (p) slides.push({ product: p, eyebrow: HERO_EYEBROWS[slides.length] });
-  }
-  for (const p of pool) {
-    if (slides.length >= 4) break;
-    if (!slides.some((s) => s.product.id === p.id)) {
-      slides.push({ product: p, eyebrow: HERO_EYEBROWS[slides.length] });
+  const used = new Set<number>();
+  // Round-robin across the high-demand lines for variety
+  let added = true;
+  while (slides.length < limit && added) {
+    added = false;
+    for (const line of HIGH_DEMAND_LINES) {
+      if (slides.length >= limit) break;
+      const next = pool
+        .filter((p) => !used.has(p.id) && line.match.test(p.name))
+        .sort((a, b) => rank(b) - rank(a))[0];
+      if (next) {
+        used.add(next.id);
+        slides.push({
+          product: next,
+          eyebrow: HERO_EYEBROWS[slides.length % HERO_EYEBROWS.length],
+        });
+        added = true;
+      }
     }
   }
   return slides;

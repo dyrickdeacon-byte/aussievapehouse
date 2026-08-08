@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import {
+  DISCOUNT_STORAGE_KEY,
+  OFFER_DONE_KEY,
+  WELCOME_CODE,
+} from "@/lib/discount";
 
 export default function NewsletterForm() {
   const [email, setEmail] = useState("");
@@ -16,6 +21,11 @@ export default function NewsletterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+      if (res.ok) {
+        // same auto-apply flag the popup sets — checkout picks it up
+        localStorage.setItem(DISCOUNT_STORAGE_KEY, WELCOME_CODE);
+        localStorage.setItem(OFFER_DONE_KEY, "1");
+      }
       setState(res.ok ? "done" : "error");
     } catch {
       setState("error");
@@ -25,7 +35,7 @@ export default function NewsletterForm() {
   if (state === "done") {
     return (
       <p className="rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-semibold text-accent">
-        You&apos;re in! Check your inbox for your 10% off code. 🎉
+        You&apos;re in! Your 10% off applies automatically at checkout. 🎉
       </p>
     );
   }
