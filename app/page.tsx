@@ -5,6 +5,7 @@ import {
   getBrandCounts,
   getCategoryTiles,
   getHeroProducts,
+  getHighDemand,
   groupLabel,
   primaryImage,
 } from "@/lib/catalog";
@@ -15,31 +16,86 @@ import Faq from "@/components/Faq";
 import NewsletterForm from "@/components/NewsletterForm";
 import Medallion, { MedallionDivider } from "@/components/Medallion";
 
-// Each trust item carries its own earth tone — part of the multicolour blend
+// Proper stroke icons (no emojis), each in its own earth tone
+function TrustIcon({ d, extra }: { d: string; extra?: React.ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="22"
+      height="22"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d={d} />
+      {extra}
+    </svg>
+  );
+}
+
 const TRUST = [
   {
-    icon: "🚀",
+    icon: (
+      <TrustIcon
+        d="M10 17h4V6a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h1"
+        extra={
+          <>
+            <path d="M14 9h3.6a1 1 0 0 1 .8.4l2.4 3.2a1 1 0 0 1 .2.6V16a1 1 0 0 1-1 1h-1" />
+            <circle cx="7" cy="17.5" r="1.8" />
+            <circle cx="17" cy="17.5" r="1.8" />
+          </>
+        }
+      />
+    ),
     title: "Same-Day Dispatch",
     body: "Order before 2pm AEST and it ships today, Australia-wide.",
     circle: "bg-[#b4451c]/12",
     text: "text-accent",
   },
   {
-    icon: "📦",
+    icon: (
+      <TrustIcon
+        d="M21 8.2v7.6a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 15.8V8.2a2 2 0 0 1 1-1.73l7-4a2 2 0 0 1 2 0l7 4a2 2 0 0 1 1 1.73z"
+        extra={
+          <>
+            <path d="M3.3 7.3 12 12l8.7-4.7" />
+            <path d="M12 22V12" />
+          </>
+        }
+      />
+    ),
     title: "Discreet Packaging",
     body: "Plain box, no branding, nothing on the label. Every order.",
     circle: "bg-[#9c731a]/15",
     text: "text-ochre",
   },
   {
-    icon: "✅",
+    icon: (
+      <TrustIcon
+        d="M12 2 4.5 4.8V11c0 4.7 3.2 8.8 7.5 10 4.3-1.2 7.5-5.3 7.5-10V4.8z"
+        extra={<path d="m9 11.5 2 2 4-4" />}
+      />
+    ),
     title: "100% Genuine Stock",
     body: "Sourced direct. Verify authenticity codes on every major brand.",
     circle: "bg-[#2f6d5f]/12",
     text: "text-eucalypt",
   },
   {
-    icon: "🔒",
+    icon: (
+      <TrustIcon
+        d="M8 10V7a4 4 0 0 1 8 0v3"
+        extra={
+          <>
+            <rect x="4.5" y="10" width="15" height="9.5" rx="2" />
+            <circle cx="12" cy="14.8" r="1.3" fill="currentColor" stroke="none" />
+          </>
+        }
+      />
+    ),
     title: "Secure Checkout",
     body: "256-bit encrypted payments — card, PayPal, Apple Pay & more.",
     circle: "bg-[#8a2f1a]/12",
@@ -91,6 +147,7 @@ export default function HomePage() {
   const tiles = getCategoryTiles();
   const bestSellers = getBestSellers(8);
   const brands = getBrandCounts();
+  const highDemand = getHighDemand(10);
 
   return (
     <div>
@@ -110,7 +167,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-[1380px] grid-cols-2 gap-6 px-4 py-9 text-center lg:grid-cols-4">
           {TRUST.map((t) => (
             <div key={t.title}>
-              <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full text-2xl ${t.circle}`}>
+              <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${t.circle} ${t.text}`}>
                 {t.icon}
               </div>
               <p className={`mt-2.5 text-[13.5px] font-bold ${t.text}`}>{t.title}</p>
@@ -121,6 +178,26 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* High-demand line-up — the owner's must-feature vapes */}
+      {highDemand.length > 0 && (
+        <section className="mx-auto max-w-[1380px] px-4 pt-16">
+          <div className="flex items-end justify-between">
+            <SectionHead eyebrow="Most Wanted" title="The high-demand line-up" medallion={2} />
+            <Link
+              href="/shop?group=disposables"
+              className="mb-8 hidden text-sm font-semibold text-accent hover:underline sm:block"
+            >
+              All disposables →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-5">
+            {highDemand.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Category tiles */}
       <section className="relative mx-auto max-w-[1380px] overflow-hidden px-4 py-16">

@@ -461,10 +461,6 @@ export function searchProducts(opts: SearchOptions): {
   }
 
   const priceOf = (p: Product) => p.price ?? p.price_min ?? 0;
-  // 178 supplier listings ship a blank "import placeholder" image — sink
-  // them below products with real photos in the default sort
-  const hasRealPhoto = (p: Product) =>
-    p.images.length > 0 && !/placeholder/i.test(p.images[0].alt ?? "");
   switch (opts.sort) {
     case "price-asc":
       items = [...items].sort((a, b) => priceOf(a) - priceOf(b));
@@ -476,14 +472,19 @@ export function searchProducts(opts: SearchOptions): {
       items = [...items].sort((a, b) => a.name.localeCompare(b.name));
       break;
     default:
-      // "featured": in-stock first, real photos before placeholders, then name
+      // "featured": in-stock first, then name
       items = [...items].sort(
         (a, b) =>
           Number(b.in_stock) - Number(a.in_stock) ||
-          Number(hasRealPhoto(b)) - Number(hasRealPhoto(a)) ||
           a.name.localeCompare(b.name)
       );
   }
+
+  // Owner rule: whatever the sort, products without a real photo list last
+  const withPhoto: Product[] = [];
+  const withoutPhoto: Product[] = [];
+  for (const p of items) (primaryImage(p) ? withPhoto : withoutPhoto).push(p);
+  items = [...withPhoto, ...withoutPhoto];
 
   const total = items.length;
   const pages = Math.max(1, Math.ceil(total / perPage));
@@ -604,6 +605,7 @@ const BRAND_DEFS = [
   "Geek Bar",
   "IGET",
   "Alibarbar",
+  "Elf Bar",
   "HQD",
   "VooPoo",
   "Uwell",
@@ -612,6 +614,61 @@ const BRAND_DEFS = [
   "Nasty Juice",
   "Airmez",
 ];
+
+// The owner's must-feature lines — one best-in-show product per line
+// fills the homepage "high demand" rail
+const HIGH_DEMAND_LINES: { name: string; match: RegExp }[] = [
+  { name: "IGET Bar Plus", match: /iget bar plus|bar plus/i },
+  { name: "IGET Bar Pro", match: /iget bar pro|bar pro/i },
+  { name: "IGET Bar", match: /iget bar\b(?! plus| pro)/i },
+  { name: "IGET Legend", match: /iget legend/i },
+  { name: "IGET One", match: /iget one/i },
+  { name: "IGET Moon", match: /iget moon/i },
+  { name: "IGET Star", match: /iget star/i },
+  { name: "Geek Bar", match: /geek ?bar/i },
+  { name: "Elf Bar", match: /elf ?bar/i },
+  { name: "Alibarbar", match: /alibarbar/i },
+];
+
+export function getHighDemand(limit = 10): Product[] {
+  const pool = getProducts().filter(
+    (p) =>
+      sellable(p) &&
+      primaryImage(p) &&
+      !/bundle|\(\d+\s*pcs\)|bulk/i.test(p.name)
+  );
+  const score = (p: Product) =>
+    (primaryImage(p)?.width ?? 0) + (p.on_sale ? 300 : 0);
+  const picks: Product[] = [];
+  const used = new Set<number>();
+  for (const line of HIGH_DEMAND_LINES) {
+    const best = pool
+      .filter((p) => !used.has(p.id) && line.match.test(p.name))
+      .sort((a, b) => score(b) - score(a))[0];
+    if (best) {
+      used.add(best.id);
+      picks.push(best);
+    }
+  }
+  // Fill remaining slots round-robin across the lines so one brand
+  // doesn't monopolise the rail
+  let added = true;
+  while (picks.length < limit && added) {
+    added = false;
+    for (const line of HIGH_DEMAND_LINES) {
+      if (picks.length >= limit) break;
+      const next = pool
+        .filter((p) => !used.has(p.id) && line.match.test(p.name))
+        .sort((a, b) => score(b) - score(a))[0];
+      if (next) {
+        used.add(next.id);
+        picks.push(next);
+        added = true;
+      }
+    }
+  }
+  return picks.slice(0, limit);
+}
 
 export function getBrandCounts(): { name: string; count: number }[] {
   const products = getProducts();
@@ -654,10 +711,12 @@ export function getBestSellers(limit = 8): Product[] {
 
 export function getRelated(product: Product, limit = 4): Product[] {
   const catSlugs = new Set(product.categories.map((c) => c.slug));
+  // Owner rule: no photo-less products in "You might also like"
   const same = getProducts().filter(
     (p) =>
       p.id !== product.id &&
       p.in_stock &&
+      primaryImage(p) &&
       (p.categories.some((c) => catSlugs.has(c.slug)) || p.group === product.group)
   );
   // Deterministic but varied: rotate the list based on product id
