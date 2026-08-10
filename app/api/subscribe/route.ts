@@ -10,6 +10,16 @@ import {
 // Upstash Redis on Vercel) and sends the welcome email (customer) +
 // notification (owner).
 export async function POST(req: Request) {
+  try {
+    return await handleSubscribe(req);
+  } catch (e) {
+    const msg = String((e as Error)?.stack ?? (e as Error)?.message ?? e);
+    console.error("[subscribe] unhandled:", msg);
+    return NextResponse.json({ error: "server_error", detail: msg.slice(0, 500) }, { status: 500 });
+  }
+}
+
+async function handleSubscribe(req: Request) {
   let email: unknown;
   try {
     ({ email } = await req.json());

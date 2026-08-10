@@ -8,6 +8,21 @@ import { discountFor, WELCOME_CODE } from "@/lib/discount";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
+  // Anything thrown in here previously became a bare 500 with an empty body,
+  // which crashed the checkout form on res.json() and told nobody why.
+  try {
+    return await handleOrder(req);
+  } catch (e) {
+    const msg = String((e as Error)?.stack ?? (e as Error)?.message ?? e);
+    console.error("[orders] unhandled:", msg);
+    return NextResponse.json(
+      { error: "server_error", detail: msg.slice(0, 500) },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleOrder(req: Request) {
   let body: Record<string, unknown>;
   try {
     body = await req.json();
