@@ -7,7 +7,11 @@
 
 import { writeFileSync, statSync } from "node:fs";
 import path from "node:path";
+import nextEnv from "@next/env";
 import { computeBaseProducts } from "../lib/catalog.ts";
+
+// Match the app's env so image srcs are built with the same CDN setting
+nextEnv.loadEnvConfig(process.cwd(), true, { info() {}, error() {} });
 
 const products = computeBaseProducts();
 

@@ -14,7 +14,12 @@
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import nextEnv from "@next/env";
 import { createClient } from "@supabase/supabase-js";
+
+// Standalone scripts don't get .env.local for free — load it the same way
+// Next does, so the keys live in that file and nowhere else.
+nextEnv.loadEnvConfig(process.cwd(), true, { info() {}, error() {} });
 
 const URL = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
