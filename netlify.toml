@@ -9,6 +9,7 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # the catalog is committed prebuilt, so CI only runs `next build`
 
 # Official Next.js runtime — handles SSR routes, server actions and
 # API routes as Netlify Functions.
