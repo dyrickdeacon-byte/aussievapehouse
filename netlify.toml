@@ -1,0 +1,29 @@
+# Netlify deployment config.
+# Netlify's free tier allows commercial use and includes 100GB/month of
+# bandwidth (Vercel Hobby is non-commercial with 10GB), which is why this
+# store runs here rather than on Vercel.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Official Next.js runtime — handles SSR routes, server actions and
+# API routes as Netlify Functions.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Product imagery is content-addressed by slug and never mutated in place,
+# so it can be cached hard. Without this the CDN revalidates constantly and
+# every visitor re-downloads ~100MB of imagery.
+[[headers]]
+  for = "/products/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/sourced/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
