@@ -47,6 +47,16 @@ export function fsRead<T>(key: string): T | null {
 }
 
 function fsWrite(key: string, value: unknown): void {
+  // Serverless filesystems are read-only, so reaching here in production
+  // means Supabase isn't configured. Say so plainly rather than surfacing
+  // a confusing EROFS from deep inside a write.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Supabase not configured: set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY " +
+        "in the host's environment variables. This host has a read-only " +
+        "filesystem, so orders and settings cannot be saved without it."
+    );
+  }
   mkdirSync(path.dirname(fileFor(key)), { recursive: true });
   writeFileSync(fileFor(key), JSON.stringify(value, null, 1));
 }
