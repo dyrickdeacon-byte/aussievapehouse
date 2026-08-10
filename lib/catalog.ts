@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { getCustomProducts, slugify, type CustomProduct } from "@/lib/products-custom";
+import { imageUrl } from "@/lib/image-host";
 import path from "node:path";
 
 // src is rewritten at load time to the local /img/ route (the supplier's
@@ -383,13 +384,19 @@ export function computeBaseProducts(): Product[] {
 
 function getBaseProducts(): Product[] {
   if (!cache) {
+    let loaded: Product[];
     try {
       // Prebuilt at deploy time — small, already cleaned and deduped
-      cache = JSON.parse(readFileSync(RUNTIME_CATALOG(), "utf8")) as Product[];
+      loaded = JSON.parse(readFileSync(RUNTIME_CATALOG(), "utf8")) as Product[];
     } catch {
       // Local dev before the build step has run
-      cache = computeBaseProducts();
+      loaded = computeBaseProducts();
     }
+    // Point image srcs at the CDN (once per cold start, then cached)
+    cache = loaded.map((p) => ({
+      ...p,
+      images: p.images.map((im) => ({ ...im, src: imageUrl(im.src) })),
+    }));
   }
   return cache;
 }
@@ -432,7 +439,7 @@ function customToProduct(c: CustomProduct): Product {
     average_rating: "5",
     review_count: 0,
     images: c.images.map((im) => ({
-      src: im.src,
+      src: imageUrl(im.src),
       alt: im.alt || c.name,
       local: im.src,
       remote: im.src,

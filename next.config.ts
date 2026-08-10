@@ -39,6 +39,13 @@ const nextConfig: NextConfig = {
         hostname: "aussievapemart.com.au",
         pathname: "/wp-content/uploads/**",
       },
+      // free CDN mirror of the public repo — keeps product imagery off
+      // Vercel's metered origin transfer
+      {
+        protocol: "https",
+        hostname: "cdn.jsdelivr.net",
+        pathname: "/gh/**",
+      },
       // admin-uploaded product images (Supabase Storage)
       {
         protocol: "https",
