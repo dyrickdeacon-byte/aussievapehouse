@@ -13,6 +13,12 @@
   # address in the footer, the sender shown on emails, the CDN base URL — so
   # the scanner would flag them forever. Real secrets (SMTP_PASS,
   # SUPABASE_SERVICE_ROLE_KEY, ADMIN_PASSWORD, RESEND_API_KEY) stay scanned.
+  # Turbopack writes the build environment into its incremental cache, so
+  # ADMIN_PASSWORD lands in .sst files. That cache is a build artifact and is
+  # never deployed or served — verified by building with a sentinel value:
+  # it appears in .next/cache only, never in .next/static or .next/server.
+  # Scoped to the cache path so a genuine leak into shipped code still fails.
+  SECRETS_SCAN_OMIT_PATHS = ".next/cache/**,.netlify/.next/cache/**"
   SECRETS_SCAN_OMIT_KEYS = "MAIL_FROM,MAIL_OWNER,MAIL_REPLY_TO,SMTP_USER,SMTP_HOST,SUPABASE_URL,NEXT_PUBLIC_IMAGE_CDN"
   # the catalog is committed prebuilt, so CI only runs `next build`
 
