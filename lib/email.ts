@@ -21,32 +21,83 @@ function logEmail(entry: Record<string, unknown>) {
   }
 }
 
-// Fire-and-forget sender: an email failure must never block an order.
-export async function sendMail(opts: {
-  to: string;
-  subject: string;
-  html: string;
-}): Promise<boolean> {
-  try {
-    const nodemailer = (await import("nodemailer")).default;
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 465),
-      secure: (process.env.SMTP_SECURE ?? "true") !== "false",
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      connectionTimeout: 15000,
-    });
-    await transporter.sendMail({
+type MailOpts = { to: string; subject: string; html: string };
+
+// Serverless hosts (Netlify/Vercel functions run on Lambda) block or hang
+// outbound SMTP, which killed the whole request — orders returned an empty
+// body and the client blew up on res.json(). So: HTTP API first, SMTP only
+// as a fallback for hosts that allow it, and a hard cap either way.
+const MAIL_TIMEOUT_MS = 5000;
+
+async function sendViaResend(opts: MailOpts): Promise<boolean> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return false;
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
       from: FROM(),
-      replyTo: REPLY_TO(),
-      to: opts.to,
+      reply_to: REPLY_TO(),
+      to: [opts.to],
       subject: opts.subject,
       html: opts.html,
-    });
-    logEmail({ ok: true, to: opts.to, subject: opts.subject });
+    }),
+    signal: AbortSignal.timeout(MAIL_TIMEOUT_MS),
+  });
+  if (!res.ok) {
+    throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  }
+  return true;
+}
+
+async function sendViaSmtp(opts: MailOpts): Promise<boolean> {
+  if (!process.env.SMTP_HOST) return false;
+  const nodemailer = (await import("nodemailer")).default;
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || 465),
+    secure: (process.env.SMTP_SECURE ?? "true") !== "false",
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    // tight, so a blocked port can't hold the function open until it dies
+    connectionTimeout: MAIL_TIMEOUT_MS,
+    greetingTimeout: MAIL_TIMEOUT_MS,
+    socketTimeout: MAIL_TIMEOUT_MS,
+  });
+  await transporter.sendMail({
+    from: FROM(),
+    replyTo: REPLY_TO(),
+    to: opts.to,
+    subject: opts.subject,
+    html: opts.html,
+  });
+  return true;
+}
+
+/**
+ * Never throws and never hangs — callers must be able to treat email as
+ * best-effort so a mail outage can't lose an order.
+ */
+export async function sendMail(opts: MailOpts): Promise<boolean> {
+  const attempt = async () => {
+    if (await sendViaResend(opts)) return "resend";
+    if (await sendViaSmtp(opts)) return "smtp";
+    return null;
+  };
+  try {
+    const via = await Promise.race([
+      attempt(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("mail timeout")), MAIL_TIMEOUT_MS + 1500)
+      ),
+    ]);
+    if (!via) {
+      logEmail({ ok: false, to: opts.to, subject: opts.subject, error: "no mail transport configured" });
+      return false;
+    }
+    logEmail({ ok: true, via, to: opts.to, subject: opts.subject });
     return true;
   } catch (e) {
     logEmail({

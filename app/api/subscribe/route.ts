@@ -24,16 +24,20 @@ export async function POST(req: Request) {
   const isNew = !(await hashHas("subscribers", key));
   if (isNew) {
     await hashSet("subscribers", key, { email: key, at: new Date().toISOString() });
-    void sendMail({
-      to: email,
-      subject: "Your 10% off Aussie Vape House 🎉",
-      html: subscribeCustomerHtml(),
-    });
-    void sendMail({
-      to: process.env.MAIL_OWNER || "info@aussievapehouse.com",
-      subject: `New subscriber: ${email}`,
-      html: subscribeOwnerHtml(email),
-    });
+    // Awaited (capped, never throws) — serverless freezes the function once
+    // the response is sent, so detached sends would never actually run.
+    await Promise.allSettled([
+      sendMail({
+        to: email,
+        subject: "Your 10% off Aussie Vape House 🎉",
+        html: subscribeCustomerHtml(),
+      }),
+      sendMail({
+        to: process.env.MAIL_OWNER || "info@aussievapehouse.com",
+        subject: `New subscriber: ${email}`,
+        html: subscribeOwnerHtml(email),
+      }),
+    ]);
   }
   return NextResponse.json({ ok: true });
 }

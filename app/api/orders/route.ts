@@ -82,17 +82,21 @@ export async function POST(req: Request) {
 
   await addOrder(order);
 
-  // Emails are fire-and-forget — a mail outage must not lose the order
-  void sendMail({
-    to: order.customer.email,
-    subject: `Your Aussie Vape House order ${order.id}`,
-    html: orderCustomerHtml(order, settings),
-  });
-  void sendMail({
-    to: process.env.MAIL_OWNER || "info@aussievapehouse.com",
-    subject: `New order ${order.id} — AU$${(order.total ?? order.subtotal).toFixed(2)} (${order.paymentMode})`,
-    html: orderOwnerHtml(order),
-  });
+  // Awaited, not fire-and-forget: serverless freezes the function once the
+  // response is sent, so detached sends never actually run. sendMail is
+  // capped and never throws, so this cannot fail or hang the order.
+  await Promise.allSettled([
+    sendMail({
+      to: order.customer.email,
+      subject: `Your Aussie Vape House order ${order.id}`,
+      html: orderCustomerHtml(order, settings),
+    }),
+    sendMail({
+      to: process.env.MAIL_OWNER || "info@aussievapehouse.com",
+      subject: `New order ${order.id} — AU$${(order.total ?? order.subtotal).toFixed(2)} (${order.paymentMode})`,
+      html: orderOwnerHtml(order),
+    }),
+  ]);
 
   return NextResponse.json({ ok: true, orderId: order.id });
 }
