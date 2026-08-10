@@ -47,21 +47,29 @@ async function handleSubscribe(req: Request) {
       { status: 503 }
     );
   }
+  // The customer always gets their code — someone re-subscribing has lost
+  // the email or cleared their browser, and silence reads as "it's broken"
+  // while the discount they asked for never arrives. The owner is only
+  // notified about genuinely new subscribers, so repeats don't spam them.
+  //
+  // Awaited (capped, never throws) — serverless freezes the function once
+  // the response is sent, so detached sends would never actually run.
+  const sends = [
+    sendMail({
+      to: email,
+      subject: "Your 10% off Aussie Vape House 🎉",
+      html: subscribeCustomerHtml(),
+    }),
+  ];
   if (isNew) {
-    // Awaited (capped, never throws) — serverless freezes the function once
-    // the response is sent, so detached sends would never actually run.
-    await Promise.allSettled([
-      sendMail({
-        to: email,
-        subject: "Your 10% off Aussie Vape House 🎉",
-        html: subscribeCustomerHtml(),
-      }),
+    sends.push(
       sendMail({
         to: process.env.MAIL_OWNER || "info@aussievapehouse.com",
         subject: `New subscriber: ${email}`,
         html: subscribeOwnerHtml(email),
-      }),
-    ]);
+      })
+    );
   }
+  await Promise.allSettled(sends);
   return NextResponse.json({ ok: true });
 }
