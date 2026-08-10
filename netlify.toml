@@ -9,6 +9,11 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # These are public by design and appear in the site itself — the contact
+  # address in the footer, the sender shown on emails, the CDN base URL — so
+  # the scanner would flag them forever. Real secrets (SMTP_PASS,
+  # SUPABASE_SERVICE_ROLE_KEY, ADMIN_PASSWORD, RESEND_API_KEY) stay scanned.
+  SECRETS_SCAN_OMIT_KEYS = "MAIL_FROM,MAIL_OWNER,MAIL_REPLY_TO,SMTP_USER,SMTP_HOST,SUPABASE_URL,NEXT_PUBLIC_IMAGE_CDN"
   # the catalog is committed prebuilt, so CI only runs `next build`
 
 # Official Next.js runtime — handles SSR routes, server actions and

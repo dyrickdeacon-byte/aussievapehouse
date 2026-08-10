@@ -17,7 +17,7 @@ SMTP_HOST=mail.spacemail.com
 SMTP_PORT=465
 SMTP_SECURE=true
 SMTP_USER=noreply@aussievapehouse.com
-SMTP_PASS=Va12can$beHear
+SMTP_PASS=<the noreply@ mailbox password, from your password manager>
 MAIL_FROM=Aussie Vape House <noreply@aussievapehouse.com>
 MAIL_REPLY_TO=info@aussievapehouse.com
 MAIL_OWNER=info@aussievapehouse.com
@@ -26,6 +26,9 @@ NEXT_PUBLIC_IMAGE_CDN=https://cdn.jsdelivr.net/gh/dyrickdeacon-byte/aussievapeho
 ```
 
 Notes:
+- **Never paste real secret values into this file.** It is committed to a
+  public repo. Placeholders only — the real values live in the host's
+  environment variables and your password manager.
 - Paste values **raw** — no quotes, no backslash escaping. (The `\$` in
   `.env.local` is only needed because Next's local loader expands `$var`.)
 - `NEXT_PUBLIC_IMAGE_CDN` serves product imagery from jsDelivr's free CDN,
