@@ -5,7 +5,7 @@
 //
 // Wired into `npm run build` — see package.json.
 
-import { writeFileSync, statSync } from "node:fs";
+import { existsSync, writeFileSync, statSync } from "node:fs";
 import path from "node:path";
 import nextEnv from "@next/env";
 import { computeBaseProducts } from "../lib/catalog.ts";
@@ -49,23 +49,32 @@ const slim = live.map((p) => ({
   has_options: p.has_options,
   average_rating: p.average_rating,
   review_count: p.review_count,
-  images: p.images.map((im) => ({
-    src: im.src,
-    alt: im.alt,
-    local: im.local,
-    remote: "",
-    width: im.width,
-    height: im.height,
-  })),
+  // Only images we actually shipped. scripts/optimise-images.mjs converts
+  // the first few per product, so referencing the rest produced broken
+  // galleries; checking the filesystem means that can't drift again.
+  images: p.images
+    .filter((im) => !im.src.startsWith("/products/") || existsSync(`public${im.src}`))
+    .map((im) => ({
+      src: im.src,
+      alt: im.alt,
+      local: im.local,
+      remote: "",
+      width: im.width,
+      height: im.height,
+    })),
   group: p.group,
 }));
 
+const withImages = slim.filter((p) => p.images.length > 0);
+const dropped = slim.length - withImages.length;
+if (dropped) console.log(`dropped ${dropped} product(s) whose images were never converted`);
+
 const out = path.resolve("catalog", "runtime-catalog.json");
-writeFileSync(out, JSON.stringify(slim));
+writeFileSync(out, JSON.stringify(withImages));
 
 const before = statSync(path.resolve("catalog", "products.json")).size;
 const after = statSync(out).size;
 console.log(
-  `runtime catalog: ${slim.length} products (from ${products.length}) — ` +
+  `runtime catalog: ${withImages.length} products (from ${products.length}) — ` +
     `${(before / 1048576).toFixed(1)}MB → ${(after / 1048576).toFixed(1)}MB`
 );

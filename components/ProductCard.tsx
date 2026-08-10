@@ -74,7 +74,12 @@ export default function ProductCard({ product }: { product: Product }) {
               </>
             )}
           </span>
-          {product.has_options || hasRange ? (
+          {/* "Options" only where a single price would be wrong (a genuine
+              price range). has_options is set on ~400 scraped products, but
+              variant selection was never built — the product page just adds
+              at the base price, so sending people there said "choose
+              something" and then offered no choice. */}
+          {hasRange ? (
             <Link
               href={`/product/${product.slug}`}
               className="rounded-lg bg-accent px-3 py-1.5 text-[10.5px] font-extrabold uppercase tracking-wide text-white transition hover:bg-accent-2"
