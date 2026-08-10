@@ -332,8 +332,15 @@ function loadImageMeta(): Record<string, [number, number]> {
   }
 }
 
-function getBaseProducts(): Product[] {
-  if (!cache) {
+// Prebuilt, fully-processed catalog (scripts/build-runtime-catalog.mjs).
+// Shipping this instead of the 28.6MB raw scrape keeps the serverless
+// bundle small — the raw file was being copied into every function and
+// re-read on every cold start, which is what burned Vercel's transfer quota.
+const RUNTIME_CATALOG = () =>
+  path.join(process.cwd(), "catalog", "runtime-catalog.json");
+
+export function computeBaseProducts(): Product[] {
+  {
     const meta = loadImageMeta();
     const file = path.join(process.cwd(), "catalog", "products.json");
     const raw = JSON.parse(readFileSync(file, "utf8")) as RawProduct[];
@@ -370,6 +377,19 @@ function getBaseProducts(): Product[] {
       }))
       )
     );
+    return cache;
+  }
+}
+
+function getBaseProducts(): Product[] {
+  if (!cache) {
+    try {
+      // Prebuilt at deploy time — small, already cleaned and deduped
+      cache = JSON.parse(readFileSync(RUNTIME_CATALOG(), "utf8")) as Product[];
+    } catch {
+      // Local dev before the build step has run
+      cache = computeBaseProducts();
+    }
   }
   return cache;
 }
