@@ -21,9 +21,23 @@ export async function POST(req: Request) {
   }
 
   const key = email.trim().toLowerCase();
-  const isNew = !(await hashHas("subscribers", key));
+  let isNew: boolean;
+  try {
+    isNew = !(await hashHas("subscribers", key));
+    if (isNew) {
+      await hashSet("subscribers", key, { email: key, at: new Date().toISOString() });
+    }
+  } catch (e) {
+    // Storage misconfiguration used to surface as an opaque 500 with an
+    // empty body — say what actually broke.
+    const msg = String((e as Error)?.message ?? e);
+    console.error("[subscribe] storage failed:", msg);
+    return NextResponse.json(
+      { error: "storage_unavailable", detail: msg.slice(0, 300) },
+      { status: 503 }
+    );
+  }
   if (isNew) {
-    await hashSet("subscribers", key, { email: key, at: new Date().toISOString() });
     // Awaited (capped, never throws) — serverless freezes the function once
     // the response is sent, so detached sends would never actually run.
     await Promise.allSettled([

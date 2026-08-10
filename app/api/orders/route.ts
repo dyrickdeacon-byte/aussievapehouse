@@ -80,7 +80,18 @@ export async function POST(req: Request) {
     total: Math.round((subtotal - discount) * 100) / 100,
   };
 
-  await addOrder(order);
+  try {
+    await addOrder(order);
+  } catch (e) {
+    // Never swallow this — an order we can't persist must not look like a
+    // success to the customer. Log loudly, tell the client plainly.
+    const msg = String((e as Error)?.message ?? e);
+    console.error("[orders] could not save order", order.id, msg);
+    return NextResponse.json(
+      { error: "storage_unavailable", detail: msg.slice(0, 300) },
+      { status: 503 }
+    );
+  }
 
   // Awaited, not fire-and-forget: serverless freezes the function once the
   // response is sent, so detached sends never actually run. sendMail is
