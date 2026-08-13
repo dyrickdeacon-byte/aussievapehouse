@@ -243,14 +243,10 @@ export function BankTransferIcon() {
   );
 }
 
+// Only what the store actually accepts — advertising methods you can't take
+// costs trust at checkout. The other marks are kept above so they can be
+// re-added here if the owner adds those methods later.
 export const PAYMENT_ICONS = [
-  { name: "Visa", Icon: VisaIcon },
-  { name: "Mastercard", Icon: MastercardIcon },
-  { name: "American Express", Icon: AmexIcon },
-  { name: "PayPal", Icon: PayPalIcon },
-  { name: "Apple Pay", Icon: ApplePayIcon },
-  { name: "Google Pay", Icon: GooglePayIcon },
-  { name: "PayID", Icon: PayIDIcon },
-  { name: "Afterpay", Icon: AfterpayIcon },
   { name: "Bank Transfer", Icon: BankTransferIcon },
+  { name: "PayID", Icon: PayIDIcon },
 ];

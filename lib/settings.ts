@@ -44,6 +44,11 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethodKey, string> = {
   other: "Other",
 };
 
+// What the store actually accepts. The keys above stay in the type so
+// previously-saved settings still parse; only these get UI and checkout
+// buttons. Add a key here to switch a method back on.
+export const ACTIVE_PAYMENT_METHODS: PaymentMethodKey[] = ["bank", "payid", "other"];
+
 const DEFAULTS: SiteSettings = {
   whatsapp: "",
   livechatEmbed: "",

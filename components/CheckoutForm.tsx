@@ -11,11 +11,6 @@ import { DISCOUNT_STORAGE_KEY, discountFor } from "@/lib/discount";
 const METHODS: { key: string; label: string }[] = [
   { key: "bank", label: "Bank Transfer" },
   { key: "payid", label: "PayID" },
-  { key: "applepay", label: "Apple Pay" },
-  { key: "paypal", label: "PayPal" },
-  { key: "googlepay", label: "Google Pay" },
-  { key: "card", label: "Card" },
-  { key: "other", label: "Other" },
 ];
 
 const AU_STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];

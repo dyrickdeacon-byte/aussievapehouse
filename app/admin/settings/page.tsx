@@ -1,5 +1,10 @@
 import { requireAdmin } from "@/lib/admin";
-import { getSettings, PAYMENT_METHOD_LABELS, type PaymentMethodKey } from "@/lib/settings";
+import {
+  ACTIVE_PAYMENT_METHODS,
+  getSettings,
+  PAYMENT_METHOD_LABELS,
+  type PaymentMethodKey,
+} from "@/lib/settings";
 import { changePasswordAction, saveSettingsAction } from "@/app/admin/actions";
 
 const input =
@@ -83,7 +88,7 @@ export default async function AdminSettingsPage({
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {(Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethodKey[]).map((key) => (
+            {ACTIVE_PAYMENT_METHODS.map((key) => (
               <label key={key} className="text-sm">
                 <span className="font-semibold">
                   {key === "other" ? "Other (custom method)" : PAYMENT_METHOD_LABELS[key]}

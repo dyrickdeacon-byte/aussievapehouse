@@ -10,7 +10,7 @@ import {
   passwordMatches,
   setAdminPassword,
 } from "@/lib/admin";
-import { getSettings, saveSettings, type PaymentMethodKey } from "@/lib/settings";
+import { ACTIVE_PAYMENT_METHODS, getSettings, saveSettings } from "@/lib/settings";
 import { updateOrderStatus, type OrderStatus } from "@/lib/orders";
 
 export async function loginAction(formData: FormData) {
@@ -51,9 +51,9 @@ export async function saveSettingsAction(formData: FormData) {
     },
     payments: {
       mode: str("paymentMode") === "direct" ? "direct" : "manual",
-      methods: (
-        ["bank", "payid", "paypal", "applepay", "googlepay", "card", "other"] as PaymentMethodKey[]
-      ).reduce(
+      // Only the methods the form renders — anything stored for an inactive
+      // method is left untouched rather than blanked by a missing field.
+      methods: ACTIVE_PAYMENT_METHODS.reduce(
         (acc, key) => ({ ...acc, [key]: str(`method_${key}`) }),
         { ...current.payments.methods }
       ),

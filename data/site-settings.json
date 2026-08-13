@@ -12,14 +12,14 @@
  "payments": {
   "mode": "manual",
   "methods": {
-   "bank": "Name: Aussie Vape House\r\nBSB: 062-000\r\nAccount: 1234 5678",
-   "payid": "PayID: pay@aussievapehouse.com",
+   "bank": "",
+   "payid": "",
    "paypal": "",
    "applepay": "",
    "googlepay": "",
    "card": "",
-   "other": "USDT (TRC20): TXsampleWalletAddress123"
+   "other": ""
   },
-  "otherLabel": "Crypto (USDT)"
+  "otherLabel": ""
  }
 }
