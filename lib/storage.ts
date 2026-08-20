@@ -1,3 +1,8 @@
+// node:fs is imported lazily inside the local-dev paths only, so the
+// Cloudflare Worker bundle never pulls in a filesystem it does not have.
+const nodeFs = async () => (await import("node:fs")).default;
+const nodePath = async () => (await import("node:path")).default;
+
 // Storage layer with two drivers:
 //  - Supabase (Postgres) when SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY are
 //    set — used in production on Vercel, where the filesystem is ephemeral.
@@ -5,8 +10,6 @@
 //  - Local JSON files under data/ otherwise — used in dev, zero setup.
 // Server-only: the service-role key must never reach the client bundle.
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import path from "node:path";
 
 const useSupabase = () =>
   !!process.env.SUPABASE_URL && !!process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -35,18 +38,21 @@ function fail(op: string, error: { message?: string } | null): never {
 
 /* ── local file driver ── */
 
-const fileFor = (key: string) =>
-  path.join(process.cwd(), "data", `${key.replace(/[^a-z0-9-]/gi, "_")}.json`);
+const fileFor = async (key: string) => {
+  const path = await nodePath();
+  return path.join(process.cwd(), "data", `${key.replace(/[^a-z0-9-]/gi, "_")}.json`);
+};
 
-export function fsRead<T>(key: string): T | null {
+export async function fsRead<T>(key: string): Promise<T | null> {
   try {
-    return JSON.parse(readFileSync(fileFor(key), "utf8")) as T;
+    const fs = await nodeFs();
+    return JSON.parse(fs.readFileSync(await fileFor(key), "utf8")) as T;
   } catch {
     return null;
   }
 }
 
-function fsWrite(key: string, value: unknown): void {
+async function fsWrite(key: string, value: unknown): Promise<void> {
   // Serverless filesystems are read-only, so reaching here in production
   // means Supabase isn't configured. Say so plainly rather than surfacing
   // a confusing EROFS from deep inside a write.
@@ -57,8 +63,11 @@ function fsWrite(key: string, value: unknown): void {
         "filesystem, so orders and settings cannot be saved without it."
     );
   }
-  mkdirSync(path.dirname(fileFor(key)), { recursive: true });
-  writeFileSync(fileFor(key), JSON.stringify(value, null, 1));
+  const fs = await nodeFs();
+  const path = await nodePath();
+  const file = await fileFor(key);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(value, null, 1));
 }
 
 /* ── single JSON documents (settings, admin auth) ── */
@@ -75,7 +84,7 @@ export async function kvGet<T>(key: string): Promise<T | null> {
     if (error) fail(`get ${key}`, error);
     return (data?.value as T) ?? null;
   }
-  return fsRead<T>(key);
+  return await fsRead<T>(key);
 }
 
 export async function kvSet(key: string, value: unknown): Promise<void> {
@@ -87,7 +96,7 @@ export async function kvSet(key: string, value: unknown): Promise<void> {
     if (error) fail(`set ${key}`, error);
     return;
   }
-  fsWrite(key, value);
+  await fsWrite(key, value);
 }
 
 /* ── hash maps (orders by id, subscribers by email) ── */
@@ -104,7 +113,7 @@ export async function hashGetAll<T>(hash: string): Promise<Record<string, T>> {
     for (const row of data ?? []) map[row.key as string] = row.value as T;
     return map;
   }
-  const raw = fsRead<unknown>(hash);
+  const raw = await fsRead<unknown>(hash);
   if (Array.isArray(raw)) {
     // legacy array files (early dev data) — convert to a map
     const map: Record<string, T> = {};
@@ -128,7 +137,7 @@ export async function hashSet(hash: string, field: string, value: unknown): Prom
   }
   const map = await hashGetAll<unknown>(hash);
   map[field] = value;
-  fsWrite(hash, map);
+  await fsWrite(hash, map);
 }
 
 export async function hashDelete(hash: string, field: string): Promise<void> {
@@ -144,7 +153,7 @@ export async function hashDelete(hash: string, field: string): Promise<void> {
   }
   const map = await hashGetAll<unknown>(hash);
   delete map[field];
-  fsWrite(hash, map);
+  await fsWrite(hash, map);
 }
 
 export async function hashHas(hash: string, field: string): Promise<boolean> {

@@ -5,10 +5,11 @@
 //
 // Wired into `npm run build` — see package.json.
 
-import { existsSync, writeFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, statSync } from "node:fs";
 import path from "node:path";
 import nextEnv from "@next/env";
-import { computeBaseProducts } from "../lib/catalog.ts";
+import { computeBaseProducts } from "../lib/catalog-build.ts";
+import { decodeEntities } from "../lib/catalog.ts";
 
 // Match the app's env so image srcs are built with the same CDN setting
 nextEnv.loadEnvConfig(process.cwd(), true, { info() {}, error() {} });
@@ -68,6 +69,21 @@ const slim = live.map((p) => ({
 const withImages = slim.filter((p) => p.images.length > 0);
 const dropped = slim.length - withImages.length;
 if (dropped) console.log(`dropped ${dropped} product(s) whose images were never converted`);
+
+// Slug -> surviving slug, for listings dropped by dedupe/sourcing. Lets the
+// product page redirect old URLs instead of 404ing, without the runtime ever
+// touching the 28.6MB scrape.
+const bySlug = new Map(withImages.map((p) => [p.name.trim().toLowerCase(), p.slug]));
+const raw = JSON.parse(readFileSync(path.resolve("catalog", "products.json"), "utf8"));
+const liveSlugs = new Set(withImages.map((p) => p.slug));
+const retired = {};
+for (const p of raw) {
+  if (liveSlugs.has(p.slug)) continue;
+  const target = bySlug.get(decodeEntities(p.name).trim().toLowerCase());
+  if (target && target !== p.slug) retired[p.slug] = target;
+}
+writeFileSync(path.resolve("catalog", "retired-slugs.json"), JSON.stringify(retired));
+console.log(`retired slug redirects: ${Object.keys(retired).length}`);
 
 const out = path.resolve("catalog", "runtime-catalog.json");
 writeFileSync(out, JSON.stringify(withImages));

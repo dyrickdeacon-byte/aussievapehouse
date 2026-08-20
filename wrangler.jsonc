@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aussievapehouse",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-08-01",
+  // nodejs_compat gives us node:crypto (admin sessions), node:buffer, and
+  // node:net/tls — the last of which is what lets SMTP work from a Worker.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

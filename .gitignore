@@ -58,3 +58,8 @@ data/admin-auth.json
 public/uploads/
 # public/products/ IS committed - it is the deployable product imagery
 data/custom-products.json
+
+# Cloudflare build output
+.open-next/
+.wrangler/
+.wrangler-dryrun/

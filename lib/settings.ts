@@ -84,7 +84,7 @@ export async function getSettings(): Promise<SiteSettings> {
   // First run on a fresh database: fall back to the committed defaults
   // file (ships in the repo) so livechat/socials/WhatsApp survive the
   // initial deploy; the first admin save then persists to the database.
-  if (!raw) raw = fsRead<Partial<SiteSettings>>("site-settings");
+  if (!raw) raw = await fsRead<Partial<SiteSettings>>("site-settings");
   if (!raw) return structuredClone(DEFAULTS);
   return {
     whatsapp: raw.whatsapp ?? "",

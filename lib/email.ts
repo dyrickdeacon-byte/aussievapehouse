@@ -1,5 +1,3 @@
-import { appendFileSync, mkdirSync } from "node:fs";
-import path from "node:path";
 import { PAYMENT_METHOD_LABELS, type SiteSettings } from "@/lib/settings";
 import type { Order } from "@/lib/orders";
 
@@ -9,16 +7,9 @@ const FROM = () =>
   process.env.MAIL_FROM || "Aussie Vape House <noreply@aussievapehouse.com>";
 
 function logEmail(entry: Record<string, unknown>) {
-  const line = JSON.stringify({ at: new Date().toISOString(), ...entry });
-  // Always emit to stdout — that's what survives on Vercel (function logs)
-  console.log("[email]", line);
-  try {
-    const dir = path.join(process.cwd(), "data");
-    mkdirSync(dir, { recursive: true });
-    appendFileSync(path.join(dir, "email-log.jsonl"), line + "\n");
-  } catch {
-    // read-only filesystem (Vercel) — stdout log above is enough
-  }
+  // stdout only — it is what every host surfaces in function logs, and it
+  // keeps this module free of node:fs so it runs on any runtime.
+  console.log("[email]", JSON.stringify({ at: new Date().toISOString(), ...entry }));
 }
 
 type MailOpts = { to: string; subject: string; html: string };

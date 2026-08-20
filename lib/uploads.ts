@@ -1,10 +1,13 @@
+// node:fs is imported lazily inside the local-dev paths only, so the
+// Cloudflare Worker bundle never pulls in a filesystem it does not have.
+const nodeFs = async () => (await import("node:fs")).default;
+const nodePath = async () => (await import("node:path")).default;
+
 // Product image uploads from the admin dashboard.
 //  - Supabase Storage bucket "product-images" when configured (Vercel).
 //  - public/uploads/ locally, so dev works with no cloud setup.
 // Returns a public URL the storefront can render directly.
 
-import { mkdirSync, writeFileSync } from "node:fs";
-import path from "node:path";
 
 const BUCKET = "product-images";
 
@@ -49,9 +52,13 @@ export async function uploadProductImage(file: File): Promise<string> {
     return db.storage.from(BUCKET).getPublicUrl(name).data.publicUrl;
   }
 
+  // Local dev only — a serverless/edge host has no writable filesystem, and
+  // reaching here in production means the Supabase bucket isn't configured.
+  const fs = await nodeFs();
+  const path = await nodePath();
   const dir = path.join(process.cwd(), "public", "uploads");
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(path.join(dir, name), bytes);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, name), bytes);
   return `/uploads/${name}`;
 }
 

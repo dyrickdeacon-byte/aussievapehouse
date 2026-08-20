@@ -1,7 +1,8 @@
-import { readFileSync } from "node:fs";
 import { getCustomProducts, slugify, type CustomProduct } from "@/lib/products-custom";
 import { imageUrl } from "@/lib/image-host";
-import path from "node:path";
+import runtimeCatalog from "@/catalog/runtime-catalog.json";
+import retiredSlugs from "@/catalog/retired-slugs.json";
+import sourcedProducts from "@/catalog/sourced-products.json";
 
 // src is rewritten at load time to the local /img/ route (the supplier's
 // server rate-limits hotlinking); remote keeps the original URL as fallback.
@@ -89,7 +90,7 @@ const GROUP_MATCHERS: { key: GroupKey; match: RegExp }[] = [
   },
 ];
 
-function classify(p: {
+export function classify(p: {
   categories: { name: string; slug: string }[];
   name: string;
 }): GroupKey {
@@ -118,7 +119,7 @@ const NAMED_ENTITIES: Record<string, string> = {
   rdquo: "”",
 };
 
-function decodeEntities(s: string): string {
+export function decodeEntities(s: string): string {
   return s
     .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
     .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
@@ -194,7 +195,7 @@ function stripCssBlobs(html: string): string {
   return out;
 }
 
-function cleanDescription(html: string): string {
+export function cleanDescription(html: string): string {
   const base = stripCssBlobs(html)
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
@@ -271,7 +272,7 @@ function cleanDescription(html: string): string {
 
 // Alt text should describe the product, not carry a whole description.
 // Falls back to the product name when the source alt is junk.
-function cleanAltText(alt: string | undefined, productName: string): string {
+export function cleanAltText(alt: string | undefined, productName: string): string {
   const a = decodeEntities(alt ?? "").replace(/\s+/g, " ").trim();
   // Leave placeholder markers intact — isPlaceholderImage keys off them to
   // exclude the listings the supplier never photographed.
@@ -296,13 +297,13 @@ export function primaryImage(p: Product): CatalogImage | undefined {
 // copy sometimes broken with $0 price). Keep the best copy per name.
 // Broken supplier imports: listings literally named "Product" (or blank).
 // Nothing real to sell there — drop them from the catalog.
-function dropJunk(products: Product[]): Product[] {
+export function dropJunk(products: Product[]): Product[] {
   return products.filter(
     (p) => p.name.trim().length >= 4 && p.name.trim().toLowerCase() !== "product"
   );
 }
 
-function dedupe(products: Product[]): Product[] {
+export function dedupe(products: Product[]): Product[] {
   const score = (p: Product) =>
     (p.images.length > 0 ? 4 : 0) +
     ((p.price ?? p.price_min ?? 0) > 0 ? 2 : 0) +
@@ -317,81 +318,17 @@ function dedupe(products: Product[]): Product[] {
   return [...best.values()];
 }
 
-type RawProduct = Omit<Product, "group" | "images"> & {
+export type RawProduct = Omit<Product, "group" | "images"> & {
   images: { src: string; alt: string; local: string }[];
 };
 
 let cache: Product[] | null = null;
 
-function loadImageMeta(): Record<string, [number, number]> {
-  try {
-    return JSON.parse(
-      readFileSync(path.join(process.cwd(), "catalog", "image-meta.json"), "utf8")
-    );
-  } catch {
-    return {};
-  }
-}
-
-// Prebuilt, fully-processed catalog (scripts/build-runtime-catalog.mjs).
-// Shipping this instead of the 28.6MB raw scrape keeps the serverless
-// bundle small — the raw file was being copied into every function and
-// re-read on every cold start, which is what burned Vercel's transfer quota.
-const RUNTIME_CATALOG = () =>
-  path.join(process.cwd(), "catalog", "runtime-catalog.json");
-
-export function computeBaseProducts(): Product[] {
-  {
-    const meta = loadImageMeta();
-    const file = path.join(process.cwd(), "catalog", "products.json");
-    const raw = JSON.parse(readFileSync(file, "utf8")) as RawProduct[];
-    cache = dropJunk(
-      dedupe(
-      raw.map((p) => ({
-        ...p,
-        name: decodeEntities(p.name),
-        categories: p.categories.map((c) => ({ ...c, name: decodeEntities(c.name) })),
-        images: p.images.map((im) => {
-          const name = im.local.replace(/^images\//, "");
-          const [width, height] = meta[name] ?? [0, 0];
-          // Served as a pre-optimised static webp from public/products/
-          // (scripts/optimise-images.mjs) — deploys with the app, no
-          // image-optimiser quota and no hotlinking the supplier.
-          const webp = name.replace(/\.[a-z0-9]+$/i, "") + ".webp";
-          return {
-            ...im,
-            // some scraped alts hold an entire markdown description
-            // (complete with the old store's branding) — keep alts short
-            alt: cleanAltText(im.alt, p.name),
-            remote: im.src,
-            src: `/products/${webp}`,
-            width: Math.min(width || 800, 800),
-            height: Math.min(height || 800, 800),
-          };
-        }),
-        description_html: cleanDescription(p.description_html),
-        description_text: p.description_text.replace(
-          /Aussie Vape Mart( Australia)?/gi,
-          "Aussie Vape House"
-        ),
-        group: classify(p),
-      }))
-      )
-    );
-    return cache;
-  }
-}
-
 function getBaseProducts(): Product[] {
   if (!cache) {
-    let loaded: Product[];
-    try {
-      // Prebuilt at deploy time — small, already cleaned and deduped
-      loaded = JSON.parse(readFileSync(RUNTIME_CATALOG(), "utf8")) as Product[];
-    } catch {
-      // Local dev before the build step has run
-      loaded = computeBaseProducts();
-    }
+    // Bundled at build time (scripts/build-runtime-catalog.mjs). A static
+    // import rather than a disk read, so this works on every runtime.
+    const loaded = runtimeCatalog as unknown as Product[];
     // Point image srcs at the CDN (once per cold start, then cached)
     cache = loaded.map((p) => ({
       ...p,
@@ -458,9 +395,9 @@ let sourcedCache: Product[] | null = null;
 function getSourcedProducts(): Product[] {
   if (!sourcedCache) {
     try {
-      const raw = JSON.parse(
-        readFileSync(path.join(process.cwd(), "catalog", "sourced-products.json"), "utf8")
-      ) as (CustomProduct & { replacesBaseName: string | null })[];
+      const raw = sourcedProducts as unknown as (CustomProduct & {
+        replacesBaseName: string | null;
+      })[];
       sourcedCache = raw.map((c, i) =>
         customToProduct({ ...c, id: 800_000 + i, updatedAt: c.createdAt })
       );
@@ -511,15 +448,10 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
 // Deduping and sourcing drop duplicate listings, so their old slugs would
 // 404. Map a dropped slug to the surviving product with the same name.
 export async function resolveRetiredSlug(slug: string): Promise<string | null> {
-  const raw = JSON.parse(
-    readFileSync(path.join(process.cwd(), "catalog", "products.json"), "utf8")
-  ) as { slug: string; name: string }[];
-  const dropped = raw.find((p) => p.slug === slug);
-  if (!dropped) return null;
-  const target = (await getProducts()).find(
-    (p) => p.name.trim().toLowerCase() === decodeEntities(dropped.name).trim().toLowerCase()
-  );
-  return target && target.slug !== slug ? target.slug : null;
+  // Prebuilt slug -> surviving slug map (scripts/build-runtime-catalog.mjs).
+  // Previously re-read the 28.6MB scrape on every 404.
+  const target = (retiredSlugs as Record<string, string>)[slug];
+  return target && target !== slug ? target : null;
 }
 
 export async function getGroupCounts(): Promise<{ key: GroupKey; label: string; count: number }[]> {

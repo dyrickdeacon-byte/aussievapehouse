@@ -36,6 +36,62 @@ Notes:
   the host instead (metered). If the repo goes private, run
   `npm run images:upload` and swap in the Supabase bucket URL it prints.
 
+
+## Cloudflare Workers (current target)
+
+Chosen for unmetered bandwidth — Vercel (10GB) and Netlify (100GB) were both
+exhausted by crawler traffic before the robots.txt fix landed. Static assets
+(~105MB of product imagery, 3,880 files) are served free by Cloudflare's CDN.
+
+Worker bundle is 2.48MB gzipped against a 3MB free-tier limit, so there is
+headroom but not a lot — watch it if large dependencies get added.
+
+### One-time
+
+1. `npx wrangler login`
+2. Add the environment variables as **secrets** (they are not in wrangler.jsonc,
+   so they never reach the repo):
+
+   ```
+   npx wrangler secret put SUPABASE_URL
+   npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+   npx wrangler secret put SMTP_HOST
+   npx wrangler secret put SMTP_PORT
+   npx wrangler secret put SMTP_SECURE
+   npx wrangler secret put SMTP_USER
+   npx wrangler secret put SMTP_PASS
+   npx wrangler secret put MAIL_FROM
+   npx wrangler secret put MAIL_REPLY_TO
+   npx wrangler secret put MAIL_OWNER
+   npx wrangler secret put ADMIN_PASSWORD
+   npx wrangler secret put NEXT_PUBLIC_IMAGE_CDN
+   ```
+
+3. Deploy: `npm run cf:deploy`
+4. Cloudflare dashboard → Workers → aussievapehouse → Settings → Domains &
+   Routes → add `aussievapehouse.com` and `www.aussievapehouse.com`.
+   Remove the domain from the previous host first.
+
+### Local preview against the real Worker runtime
+
+```bash
+npm run cf:preview
+```
+
+That runs the actual workerd runtime, so it catches anything that works in
+`next dev` but not on Cloudflare (filesystem access being the usual one).
+
+### Notes
+
+- SMTP: nodemailer is bundled and `node:net`/`node:tls` resolve under the
+  `nodejs_compat` flag, so the existing noreply@ mailbox should work. If it
+  does not, `RESEND_API_KEY` is already supported as an alternative — the
+  mail layer tries HTTP first, then SMTP.
+- The catalog is a bundled import, not a disk read; Workers have no
+  filesystem. Regenerate with `npm run build:catalog` after a catalog change.
+- Admin storage (settings, orders, products, uploads) is all Supabase over
+  HTTP, which needs nothing Cloudflare-specific.
+
 ## First deploy (Netlify)
 
 1. netlify.com → **Add new site → Import an existing project** → GitHub →
