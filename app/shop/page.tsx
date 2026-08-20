@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import {
   getBrandsForGroup,
   getCategoriesForGroup,
@@ -14,7 +15,31 @@ import ProductCard from "@/components/ProductCard";
 import ShopControls from "@/components/ShopControls";
 import Medallion from "@/components/Medallion";
 
-export const metadata = { title: "Shop" };
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://aussievapehouse.com";
+
+// Only the clean category views are indexable. Filtered, sorted and paginated
+// permutations are noindex + canonicalised to their category, so crawlers stop
+// walking the facet space (8,000+ combinations) and consolidate onto real pages.
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Params>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const group = str(params.group);
+  const filtered = ["brand", "flavour", "sort", "q", "category"].some((k) => str(params[k]));
+  const paginated = Number(str(params.page) ?? 1) > 1;
+  const canonical = group ? `${SITE}/shop?group=${group}` : `${SITE}/shop`;
+
+  return {
+    title: group ? groupLabel(group) : "Shop",
+    alternates: { canonical },
+    robots:
+      filtered || paginated
+        ? { index: false, follow: true }
+        : { index: true, follow: true },
+  };
+}
 
 type Params = { [key: string]: string | string[] | undefined };
 
@@ -116,6 +141,7 @@ export default async function ShopPage({
                 brand: brand === b.name ? null : b.name,
                 page: null,
               })}
+              rel="nofollow"
               className={`rounded-full border px-3 py-1 text-[11.5px] font-medium transition ${
                 brand === b.name
                   ? "border-accent bg-accent text-white"
@@ -139,6 +165,7 @@ export default async function ShopPage({
                 flavour: flavour === f.name ? null : f.name,
                 page: null,
               })}
+              rel="nofollow"
               className={`rounded-full border px-3 py-1 text-[11.5px] font-medium transition ${
                 flavour === f.name
                   ? "border-eucalypt bg-eucalypt text-white"
@@ -166,6 +193,7 @@ export default async function ShopPage({
               <li key={c.slug}>
                 <Link
                   href={buildQuery(params, { category: params.category === c.slug ? null : c.slug, page: null })}
+                  rel="nofollow"
                   className={`flex justify-between gap-2 rounded-md px-2 py-1.5 transition ${
                     params.category === c.slug
                       ? "bg-accent/10 text-accent"
@@ -203,6 +231,7 @@ export default async function ShopPage({
               {page > 1 && (
                 <Link
                   href={buildQuery(params, { page: String(page - 1) })}
+                  rel="nofollow"
                   className="rounded-lg border border-line px-3 py-1.5 text-muted transition hover:text-foreground"
                 >
                   ← Prev
@@ -214,6 +243,7 @@ export default async function ShopPage({
               {page < pages && (
                 <Link
                   href={buildQuery(params, { page: String(page + 1) })}
+                  rel="nofollow"
                   className="rounded-lg border border-line px-3 py-1.5 text-muted transition hover:text-foreground"
                 >
                   Next →
