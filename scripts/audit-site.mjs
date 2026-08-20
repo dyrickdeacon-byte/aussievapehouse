@@ -5,6 +5,7 @@
 // Usage: node scripts/audit-site.mjs [baseUrl]
 
 import { readFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 
 const BASE = process.argv[2] ?? "http://localhost:3000";
 const problems = [];
@@ -60,7 +61,7 @@ console.log();
 // Sample product pages across sources
 console.log("── product pages ──");
 const sourced = JSON.parse(readFileSync("catalog/sourced-products.json", "utf8"));
-const base = JSON.parse(readFileSync("catalog/products.json", "utf8"));
+const base = JSON.parse(gunzipSync(readFileSync("catalog/products.json.gz")).toString("utf8"));
 const slugs = [
   ...sourced.filter((_, i) => i % 20 === 0).slice(0, 8).map((p) => p.slug),
   ...base.filter((_, i) => i % 260 === 0).slice(0, 8).map((p) => p.slug),

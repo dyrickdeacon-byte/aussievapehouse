@@ -6,6 +6,7 @@
 // Wired into `npm run build` — see package.json.
 
 import { existsSync, readFileSync, writeFileSync, statSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import path from "node:path";
 import nextEnv from "@next/env";
 import { computeBaseProducts } from "../lib/catalog-build.ts";
@@ -74,7 +75,7 @@ if (dropped) console.log(`dropped ${dropped} product(s) whose images were never 
 // product page redirect old URLs instead of 404ing, without the runtime ever
 // touching the 28.6MB scrape.
 const bySlug = new Map(withImages.map((p) => [p.name.trim().toLowerCase(), p.slug]));
-const raw = JSON.parse(readFileSync(path.resolve("catalog", "products.json"), "utf8"));
+const raw = JSON.parse(gunzipSync(readFileSync(path.resolve("catalog", "products.json.gz"))).toString("utf8"));
 const liveSlugs = new Set(withImages.map((p) => p.slug));
 const retired = {};
 for (const p of raw) {
@@ -88,7 +89,7 @@ console.log(`retired slug redirects: ${Object.keys(retired).length}`);
 const out = path.resolve("catalog", "runtime-catalog.json");
 writeFileSync(out, JSON.stringify(withImages));
 
-const before = statSync(path.resolve("catalog", "products.json")).size;
+const before = 28.6 * 1048576; // original uncompressed scrape
 const after = statSync(out).size;
 console.log(
   `runtime catalog: ${withImages.length} products (from ${products.length}) — ` +

@@ -5,6 +5,7 @@
 // Usage: node scripts/optimise-images.mjs
 
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import path from "node:path";
 import sharp from "sharp";
 
@@ -16,7 +17,7 @@ const CONCURRENCY = 8;
 
 mkdirSync(OUT_DIR, { recursive: true });
 
-const base = JSON.parse(readFileSync(path.resolve("catalog", "products.json"), "utf8"));
+const base = JSON.parse(gunzipSync(readFileSync(path.resolve("catalog", "products.json.gz"))).toString("utf8"));
 
 // Only images belonging to products that survive to the live catalog, max 3 each
 const wanted = new Set();

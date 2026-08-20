@@ -4,6 +4,7 @@
 // bundle time. Used solely by scripts/build-runtime-catalog.mjs.
 
 import { readFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import path from "node:path";
 import {
   cleanAltText,
@@ -36,8 +37,10 @@ const RUNTIME_CATALOG = () =>
 export function computeBaseProducts(): Product[] {
   {
     const meta = loadImageMeta();
-    const file = path.join(process.cwd(), "catalog", "products.json");
-    const raw = JSON.parse(readFileSync(file, "utf8")) as RawProduct[];
+    // Stored gzipped (28.6MB -> 2.3MB): it is a build-time artifact only, and
+    // uncompressed it exceeds file-size limits on some hosts.
+    const file = path.join(process.cwd(), "catalog", "products.json.gz");
+    const raw = JSON.parse(gunzipSync(readFileSync(file)).toString("utf8")) as RawProduct[];
     return dropJunk(
       dedupe(
       raw.map((p) => ({

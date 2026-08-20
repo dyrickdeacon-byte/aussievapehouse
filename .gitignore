@@ -63,3 +63,6 @@ data/custom-products.json
 .open-next/
 .wrangler/
 .wrangler-dryrun/
+catalog/products.json
+catalog/src-*.json
+catalog/image-optimise-failures.json
